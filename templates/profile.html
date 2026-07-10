@@ -182,7 +182,7 @@
     
     async function fetchBookings() {
       try {
-        const res = await fetch('/api/user/bookings');
+        const res = await fetch(`${window.API_BASE}/user/bookings`);
         if (!res.ok) throw new Error("Failed to fetch bookings");
         const data = await res.json();
         

@@ -826,7 +826,7 @@
           return; 
       }
       try {
-        const r = await fetch('/api/book-guide', {
+        const r = await fetch(`${window.API_BASE}/book-guide`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(data)
@@ -881,7 +881,7 @@
           return; 
       }
       try {
-        const r = await fetch('/api/book-transport', {
+        const r = await fetch(`${window.API_BASE}/book-transport`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(data)
@@ -930,7 +930,7 @@
         return;
       }
       try {
-        const r = await fetch('/api/book-activity', {
+        const r = await fetch(`${window.API_BASE}/book-activity`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(data)

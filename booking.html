@@ -235,7 +235,7 @@
                 btn.disabled = true;
 
                 // Save to backend API
-                fetch('/api/book-package', {
+                fetch(`${window.API_BASE}/book-package`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formDetails)

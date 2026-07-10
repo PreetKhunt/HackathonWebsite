@@ -16,8 +16,13 @@ const originalFetch = window.fetch;
 window.fetch = async function() {
     let [resource, config] = arguments;
     
-    // Only intercept /api/ requests (excluding login/signup if they existed, though Supabase uses its own API)
-    if (typeof resource === 'string' && resource.startsWith('/api/') && !resource.startsWith('/api/admin/')) {
+    // Check if the request is destined for our backend API
+    const isApiRequest = typeof resource === 'string' && (
+        resource.startsWith('/api/') || 
+        (window.API_BASE && resource.startsWith(window.API_BASE))
+    );
+    
+    if (isApiRequest) {
         const session = await getSession();
         if (session) {
             config = config || {};
@@ -131,3 +136,4 @@ window.addEventListener('load', async () => {
         console.error("OAuth callback/session error:", error);
     }
 });
+window.API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://127.0.0.1:5000/api' : 'https://tourismwe-backend.onrender.com/api';
