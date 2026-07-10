@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, make_response
 import os
 from datetime import datetime
 import json
@@ -80,7 +80,9 @@ def book_guide():
     
     if supabase:
         try:
-            supabase.table('guide_bookings').insert(booking_data).execute()
+            print(f"Incoming request to /api/book-guide: {booking_data}")
+            res = supabase.table('guide_bookings').insert(booking_data).execute()
+            print(f"Supabase insert result for guide_bookings: {res.data}")
         except Exception as e:
             print(f'Error saving guide booking: {e}')
     return jsonify({'success': True, 'message': 'Guide booking submitted'})
@@ -111,7 +113,9 @@ def book_transport():
 
     if supabase:
         try:
-            supabase.table('transport_bookings').insert(booking_data).execute()
+            print(f"Incoming request to /api/book-transport: {booking_data}")
+            res = supabase.table('transport_bookings').insert(booking_data).execute()
+            print(f"Supabase insert result for transport_bookings: {res.data}")
         except Exception as e:
             print(f'Error saving transport booking: {e}')
     return jsonify({'success': True, 'message': 'Transport booking submitted'})
@@ -135,7 +139,9 @@ def book_activity():
 
     if supabase:
         try:
-            supabase.table('activity_bookings').insert(booking_data).execute()
+            print(f"Incoming request to /api/book-activity: {booking_data}")
+            res = supabase.table('activity_bookings').insert(booking_data).execute()
+            print(f"Supabase insert result for activity_bookings: {res.data}")
         except Exception as e:
             print(f'Error saving activity booking: {e}')
     return jsonify({'success': True, 'message': 'Activity booking submitted'})
@@ -152,7 +158,9 @@ def book_package():
 
     if supabase:
         try:
+            print(f"Incoming request to /api/book-package: {data}")
             result = supabase.table('package_bookings').insert(data).execute()
+            print(f"Supabase insert result for package_bookings: {result.data}")
             return jsonify({'success': True, 'message': 'Package booking submitted successfully', 'id': result.data[0]['id'] if result.data else None})
         except Exception as e:
             print(f"Error saving to Supabase: {e}")
@@ -185,6 +193,14 @@ def get_places():
             print(f"Error fetching from Supabase: {e}")
     return jsonify(FALLBACK_PLACES)
 
+
+def no_cache_jsonify(*args, **kwargs):
+    response = make_response(jsonify(*args, **kwargs))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 # Admin routes
 @app.route('/admin')
 def admin_dashboard():
@@ -194,41 +210,49 @@ def admin_dashboard():
 def get_guide_bookings():
     if supabase:
         try:
+            print(f"Fetching fresh guide_bookings from Supabase...")
             result = supabase.table('guide_bookings').select('*').order('created_at', desc=True).execute()
-            return jsonify(result.data or [])
+            print(f"Fetch guide_bookings result: {result.data}")
+            return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"Error fetching guide bookings: {e}")
-    return jsonify([])
+    return no_cache_jsonify([])
 
 @app.route('/api/admin/transport-bookings')
 def get_transport_bookings():
     if supabase:
         try:
+            print(f"Fetching fresh transport_bookings from Supabase...")
             result = supabase.table('transport_bookings').select('*').order('created_at', desc=True).execute()
-            return jsonify(result.data or [])
+            print(f"Fetch transport_bookings result: {result.data}")
+            return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"Error fetching transport bookings: {e}")
-    return jsonify([])
+    return no_cache_jsonify([])
 
 @app.route('/api/admin/activity-bookings')
 def get_activity_bookings():
     if supabase:
         try:
+            print(f"Fetching fresh activity_bookings from Supabase...")
             result = supabase.table('activity_bookings').select('*').order('created_at', desc=True).execute()
-            return jsonify(result.data or [])
+            print(f"Fetch activity_bookings result: {result.data}")
+            return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"Error fetching activity bookings: {e}")
-    return jsonify([])
+    return no_cache_jsonify([])
 
 @app.route('/api/admin/package-bookings')
 def get_package_bookings():
     if supabase:
         try:
+            print(f"Fetching fresh package_bookings from Supabase...")
             result = supabase.table('package_bookings').select('*').order('created_at', desc=True).execute()
-            return jsonify(result.data or [])
+            print(f"Fetch package_bookings result: {result.data}")
+            return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"Error fetching package bookings: {e}")
-    return jsonify([])
+    return no_cache_jsonify([])
 
 @app.route('/api/admin/stats')
 def get_admin_stats():
@@ -247,7 +271,7 @@ def get_admin_stats():
             activity_today = supabase.table('activity_bookings').select('id', count='exact').gte('created_at', today).execute()
             package_today = supabase.table('package_bookings').select('id', count='exact').gte('created_at', today).execute()
             
-            return jsonify({
+            return no_cache_jsonify({
                 'total': {
                     'guide': guide_total.count or 0,
                     'transport': transport_total.count or 0,
@@ -263,7 +287,7 @@ def get_admin_stats():
             })
         except Exception as e:
             print(f"Error fetching stats: {e}")
-    return jsonify({'total': {'guide': 0, 'transport': 0, 'activity': 0}, 'today': {'guide': 0, 'transport': 0, 'activity': 0}})
+    return no_cache_jsonify({'total': {'guide': 0, 'transport': 0, 'activity': 0}, 'today': {'guide': 0, 'transport': 0, 'activity': 0}})
 
 if __name__ == '__main__':
     app.run(debug=True)
