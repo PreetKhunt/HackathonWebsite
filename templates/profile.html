@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Profile - Jharkhand Tourism</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/auth.js"></script>
+  <style>
+    :root{
+      --bg:#0f1115; --card:#151923; --muted:#9ba3b4; --pri:#73d13d; --pri-2:#3bd1c4; --acc:#ffd166; --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:#e7ecf3;font-family:Poppins,sans-serif}
+    a{color:inherit;text-decoration:none}
+    .container{width:min(1180px,92%);margin:auto}
+    header.nav{
+      position:sticky;top:0;z-index:50;background:rgba(15,17,21,.7);backdrop-filter:saturate(180%) blur(14px);
+      border-bottom:1px solid #242a36;
+    }
+    .nav-inner{display:flex;align-items:center;justify-content:space-between;padding:.8rem 0}
+    .brand{display:flex;gap:.6rem;align-items:center}
+    .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--pri),var(--pri-2));display:grid;place-items:center;font-weight:700;color:#0b0e13}
+    .menu{display:flex;gap:1rem;font-size:.95rem;align-items:center}
+    section{padding:3rem 0}
+    .card{background:var(--card);border:1px solid #242a36;border-radius:18px;overflow:hidden;padding:2rem}
+    .grid{display:grid;gap:1rem}
+    .grid-2{grid-template-columns:repeat(2,1fr)}
+    @media (max-width:800px){.grid-2{grid-template-columns:1fr}}
+    .muted{color:var(--muted)}
+    
+    .profile-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid #242a36; }
+    .avatar-large { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--pri), var(--pri-2)); color: #0b0e13; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; }
+    
+    .tabs { display: flex; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #242a36; padding-bottom: 0.5rem; overflow-x: auto; }
+    .tab { padding: 0.5rem 1rem; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; }
+    .tab.active { color: white; border-bottom-color: var(--pri); font-weight: bold; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #242a36; }
+    th { color: var(--muted); font-weight: normal; font-size: 0.9rem; }
+    
+    .btn{display:inline-block;background:linear-gradient(135deg,var(--pri),var(--pri-2));color:#0b0e13;padding:.5rem 1rem;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+    .btn-outline{background:transparent;border:1px solid #2b3446;color:#e7ecf3}
+    .input-group { margin-bottom: 1rem; }
+    .input-group label { display: block; margin-bottom: 0.5rem; color: var(--muted); font-size: 0.9rem; }
+    .input-group input { background: #0d111a; border: 1px solid #2b3446; color: #e7ecf3; border-radius: 8px; padding: 0.7rem; width: 100%; outline: none; }
+    .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; display: none; }
+    .alert.success { background: rgba(115, 209, 61, 0.1); border: 1px solid var(--pri); color: var(--pri); display: block; }
+    .alert.error { background: rgba(255, 107, 107, 0.1); border: 1px solid var(--danger); color: var(--danger); display: block; }
+  </style>
+</head>
+<body>
+
+  <header class="nav">
+    <div class="container nav-inner">
+      <div class="brand">
+        <div class="logo">JT</div>
+        <div style="font-weight:700">Jharkhand Tourism</div>
+      </div>
+      <nav class="menu nav-links">
+        <a href="/">Home</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="container">
+    <div class="card">
+      <div class="profile-header">
+        <div class="avatar-large" id="profileAvatar">U</div>
+        <div>
+          <h1 id="profileName" style="margin:0 0 0.5rem 0;">Loading...</h1>
+          <p id="profileEmail" class="muted" style="margin:0;">loading@example.com</p>
+        </div>
+      </div>
+      
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('bookings')">My Bookings</div>
+        <div class="tab" onclick="switchTab('settings')">Settings</div>
+      </div>
+      
+      <div id="bookingsTab" class="tab-content active">
+        <h3 style="margin-top:1rem;color:var(--pri-2)">Package Bookings</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr><th>Package</th><th>Date</th><th>Guests</th><th>Amount</th><th>Status</th></tr>
+            </thead>
+            <tbody id="packagesTableBody"><tr><td colspan="5">Loading...</td></tr></tbody>
+          </table>
+        </div>
+        
+        <h3 style="margin-top:2rem;color:var(--pri-2)">Guide Bookings</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr><th>Places</th><th>Date</th><th>Status</th></tr>
+            </thead>
+            <tbody id="guidesTableBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+          </table>
+        </div>
+        
+        <h3 style="margin-top:2rem;color:var(--pri-2)">Transport Bookings</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr><th>Route</th><th>Date & Time</th><th>Vehicle</th><th>Status</th></tr>
+            </thead>
+            <tbody id="transportsTableBody"><tr><td colspan="4">Loading...</td></tr></tbody>
+          </table>
+        </div>
+        
+        <h3 style="margin-top:2rem;color:var(--pri-2)">Activity Bookings</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr><th>Activity</th><th>Location</th><th>Date</th><th>Status</th></tr>
+            </thead>
+            <tbody id="activitiesTableBody"><tr><td colspan="4">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div id="settingsTab" class="tab-content">
+        <div class="grid grid-2">
+          <div>
+            <h3>Update Profile</h3>
+            <div id="profileAlert" class="alert"></div>
+            <div class="input-group">
+              <label>Full Name</label>
+              <input type="text" id="updateName">
+            </div>
+            <button class="btn" onclick="updateProfile()">Save Changes</button>
+          </div>
+          <div>
+            <h3>Change Password</h3>
+            <div id="pwdAlert" class="alert"></div>
+            <div class="input-group">
+              <label>New Password</label>
+              <input type="password" id="newPwd">
+            </div>
+            <button class="btn btn-outline" onclick="updatePassword()">Update Password</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    let currentUser = null;
+
+    async function initProfile() {
+      currentUser = await requireAuth();
+      if (!currentUser) return;
+      
+      const name = currentUser.user_metadata?.name || currentUser.email.split('@')[0];
+      document.getElementById('profileName').textContent = name;
+      document.getElementById('profileEmail').textContent = currentUser.email;
+      document.getElementById('profileAvatar').textContent = name.charAt(0).toUpperCase();
+      document.getElementById('updateName').value = name;
+      
+      fetchBookings();
+    }
+    
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      if (tab === 'bookings') {
+        document.querySelectorAll('.tab')[0].classList.add('active');
+        document.getElementById('bookingsTab').classList.add('active');
+      } else {
+        document.querySelectorAll('.tab')[1].classList.add('active');
+        document.getElementById('settingsTab').classList.add('active');
+      }
+    }
+    
+    async function fetchBookings() {
+      try {
+        const res = await fetch('/api/user/bookings');
+        if (!res.ok) throw new Error("Failed to fetch bookings");
+        const data = await res.json();
+        
+        renderTable('packagesTableBody', data.packages, p => `
+          <tr>
+            <td>${p.package_name || 'N/A'}</td>
+            <td>${p.date}</td>
+            <td>${p.adults || 1} Ad, ${p.children || 0} Ch</td>
+            <td>?${p.amount || 0}</td>
+            <td><span class="badge" style="background:#2b3446">${p.status}</span></td>
+          </tr>
+        `);
+        
+        renderTable('guidesTableBody', data.guides, g => `
+          <tr>
+            <td>${g.places}</td>
+            <td>${g.date}</td>
+            <td><span class="badge" style="background:#2b3446">${g.status}</span></td>
+          </tr>
+        `);
+        
+        renderTable('transportsTableBody', data.transports, t => `
+          <tr>
+            <td>${t.pickup_location} ? ${t.destination}</td>
+            <td>${t.date} ${t.time}</td>
+            <td>${t.vehicle_type}</td>
+            <td><span class="badge" style="background:#2b3446">${t.status}</span></td>
+          </tr>
+        `);
+        
+        renderTable('activitiesTableBody', data.activities, a => `
+          <tr>
+            <td>${a.activity}</td>
+            <td>${a.location}</td>
+            <td>${a.date}</td>
+            <td><span class="badge" style="background:#2b3446">${a.status}</span></td>
+          </tr>
+        `);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    
+    function renderTable(id, arr, templateFn) {
+      const el = document.getElementById(id);
+      if (!arr || arr.length === 0) {
+        el.innerHTML = '<tr><td colspan="5" class="muted">No bookings found.</td></tr>';
+      } else {
+        el.innerHTML = arr.map(templateFn).join('');
+      }
+    }
+    
+    async function updateProfile() {
+      const name = document.getElementById('updateName').value;
+      const { error } = await supabase.auth.updateUser({ data: { name } });
+      const alert = document.getElementById('profileAlert');
+      if (error) {
+        alert.className = 'alert error';
+        alert.textContent = error.message;
+      } else {
+        alert.className = 'alert success';
+        alert.textContent = 'Profile updated!';
+        document.getElementById('profileName').textContent = name;
+        document.getElementById('profileAvatar').textContent = name.charAt(0).toUpperCase();
+        updateNavbar(); // from auth.js
+      }
+    }
+    
+    async function updatePassword() {
+      const pwd = document.getElementById('newPwd').value;
+      if (pwd.length < 6) return alert("Password must be at least 6 characters.");
+      
+      const { error } = await supabase.auth.updateUser({ password: pwd });
+      const alert = document.getElementById('pwdAlert');
+      if (error) {
+        alert.className = 'alert error';
+        alert.textContent = error.message;
+      } else {
+        alert.className = 'alert success';
+        alert.textContent = 'Password updated!';
+        document.getElementById('newPwd').value = '';
+      }
+    }
+
+    initProfile();
+  </script>
+</body>
+</html>

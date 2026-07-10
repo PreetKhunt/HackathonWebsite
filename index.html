@@ -157,6 +157,9 @@
       flex: 1;
     }
   </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/auth.js"></script>
 </head>
 <body>
   <header class="nav">
@@ -864,7 +867,13 @@
     }
     
     // -------- Activity Booking Function ----------
-    function bookActivity() {
+    async function bookActivity() {
+      const session = await getSession();
+      if (!session) {
+        sessionStorage.setItem('redirectAfterLogin', window.location.href);
+        window.location.href = '/login';
+        return;
+      }
       const data = {
         name: document.getElementById('aName').value.trim(),
         phone: document.getElementById('aPhone').value.trim(),

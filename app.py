@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify, render_template, make_response
+from flask import Flask, send_file, request, jsonify, render_template, make_response
+from functools import wraps
 import os
 from datetime import datetime
 import json
@@ -39,6 +40,34 @@ FALLBACK_PLACES = [
 
 # Using fallback data only
 
+
+def get_current_user():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return None
+    token = auth_header.replace('Bearer ', '')
+    if supabase:
+        try:
+            res = supabase.auth.get_user(token)
+            return res.user
+        except Exception as e:
+            print(f"Auth error: {e}")
+    return None
+
+def require_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            return jsonify({'success': False, 'message': 'Unauthorized. Please log in.'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route('/auth.js')
+def serve_auth():
+    return send_file('auth.js')
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -60,15 +89,18 @@ def test_page():
     return render_template('test.html')
 
 @app.route('/api/book-guide', methods=['POST'])
+@require_auth
 def book_guide():
     data = request.json or {}
+    user = get_current_user()
     
     places_str = data.get('place', data.get('places', ''))
     if isinstance(places_str, list): places_str = ', '.join(places_str)
 
     booking_data = {
+        'user_id': user.id,
         'name': data.get('name', 'Guest'),
-        'email': data.get('email', 'guest@example.com'),
+        'email': getattr(user, 'email', data.get('email', 'guest@example.com')),
         'phone': data.get('phone', '0000000000'),
         'places': places_str,
         'date': data.get('date', '2025-01-01'),
@@ -88,8 +120,10 @@ def book_guide():
     return jsonify({'success': True, 'message': 'Guide booking submitted'})
 
 @app.route('/api/book-transport', methods=['POST'])
+@require_auth
 def book_transport():
     data = request.json or {}
+    user = get_current_user()
     
     datetime_str = data.get('when', '2025-01-01T10:00')
     if 'T' in datetime_str:
@@ -98,8 +132,9 @@ def book_transport():
         d_date, d_time = datetime_str, '10:00:00'
 
     booking_data = {
+        'user_id': user.id,
         'name': data.get('name', 'Guest'),
-        'email': data.get('email', 'guest@example.com'),
+        'email': getattr(user, 'email', data.get('email', 'guest@example.com')),
         'phone': data.get('phone', '0000000000'),
         'pickup_location': data.get('from', ''),
         'destination': data.get('to', ''),
@@ -121,12 +156,15 @@ def book_transport():
     return jsonify({'success': True, 'message': 'Transport booking submitted'})
 
 @app.route('/api/book-activity', methods=['POST'])
+@require_auth
 def book_activity():
     data = request.json or {}
+    user = get_current_user()
     
     booking_data = {
+        'user_id': user.id,
         'name': data.get('name', 'Guest'),
-        'email': data.get('email', 'guest@example.com'),
+        'email': getattr(user, 'email', data.get('email', 'guest@example.com')),
         'phone': data.get('phone', '0000000000'),
         'activity': data.get('activity', ''),
         'location': data.get('location', ''),
@@ -147,8 +185,11 @@ def book_activity():
     return jsonify({'success': True, 'message': 'Activity booking submitted'})
 
 @app.route('/api/book-package', methods=['POST'])
+@require_auth
 def book_package():
     data = request.json or {}
+    user = get_current_user()
+    data['user_id'] = user.id
     
     # Required fields validation (optional but good practice)
     required_fields = ['name', 'email', 'phone', 'package_name', 'date', 'amount', 'payment_id', 'payment_status']
@@ -200,6 +241,33 @@ def no_cache_jsonify(*args, **kwargs):
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
     return response
+
+
+@app.route('/profile')
+def profile_page():
+    return render_template('profile.html')
+
+@app.route('/api/user/bookings')
+@require_auth
+def get_user_bookings():
+    user = get_current_user()
+    if not supabase:
+        return jsonify({})
+    try:
+        guides = supabase.table('guide_bookings').select('*').eq('user_id', user.id).order('created_at', desc=True).execute()
+        transports = supabase.table('transport_bookings').select('*').eq('user_id', user.id).order('created_at', desc=True).execute()
+        activities = supabase.table('activity_bookings').select('*').eq('user_id', user.id).order('created_at', desc=True).execute()
+        packages = supabase.table('package_bookings').select('*').eq('user_id', user.id).order('created_at', desc=True).execute()
+        
+        return no_cache_jsonify({
+            'guides': guides.data or [],
+            'transports': transports.data or [],
+            'activities': activities.data or [],
+            'packages': packages.data or []
+        })
+    except Exception as e:
+        print(f"Error fetching user bookings: {e}")
+        return no_cache_jsonify({'guides': [], 'transports': [], 'activities': [], 'packages': []})
 
 # Admin routes
 @app.route('/admin')

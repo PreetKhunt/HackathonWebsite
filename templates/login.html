@@ -24,6 +24,9 @@
         .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/auth.js"></script>
 </head>
 <body>
     <div class="auth-container">
@@ -65,21 +68,20 @@
             };
             
             try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                const { data: authData, error } = await supabase.auth.signInWithPassword({
+                    email: data.email,
+                    password: data.password
                 });
                 
-                const result = await response.json();
-                
-                if (result.success) {
-                    showAlert('Login successful! Redirecting...', 'success');
-                    localStorage.setItem('access_token', result.access_token);
-                    localStorage.setItem('user_name', result.user);
-                    setTimeout(() => window.location.href = '/', 1500);
+                if (error) {
+                    showAlert(error.message || 'Login failed', 'error');
                 } else {
-                    showAlert(result.error || 'Login failed', 'error');
+                    showAlert('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/';
+                        sessionStorage.removeItem('redirectAfterLogin');
+                        window.location.href = redirectUrl;
+                    }, 1500);
                 }
             } catch (error) {
                 showAlert('Network error. Please try again.', 'error');
