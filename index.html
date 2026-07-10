@@ -825,20 +825,34 @@
           if(gMsg) { gMsg.textContent = "Please fill name, phone and date."; gMsg.style.color = "#ffaaaa"; }
           return; 
       }
-      fetch('/api/book-guide', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-      }).then(r => r.json()).catch(e => console.error(e));
-      
-      if(gMsg) {
-          gMsg.textContent = "Guide request submitted! We'll confirm availability shortly.";
-          gMsg.style.color = "#9fe29f";
-      }
-      // simple itinerary kick
-      if(plan) {
-          plan.textContent =
-            `Suggested day plan for ${data.place.slice(0,3).join(", ")}:\n• Morning: Meet guide, quick briefing.\n• Mid-day: Site visits & lunch at local eatery.\n• Evening: Sunset view & return.\n• Tips: Carry water, avoid litter, respect local customs.`;
+      try {
+        const r = await fetch('/api/book-guide', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data)
+        });
+        const res = await r.json();
+        if (gMsg) {
+          if (r.ok && res.success) {
+            gMsg.textContent = res.message;
+            gMsg.style.color = "#9fe29f";
+            
+            // simple itinerary kick
+            if(data.place && data.place.length > 0 && plan) {
+              plan.innerHTML = `<h4>AI Suggestion</h4>
+                <p>Suggested day plan for ${data.place.slice(0,3).join(", ")}:\n• Morning: Meet guide, quick briefing.\n• Mid-day: Site visits & lunch at local eatery.\n• Evening: Sunset view & return.\n• Tips: Carry water, avoid litter, respect local customs.</p>`;
+            }
+          } else {
+            gMsg.textContent = res.error || "Failed to submit request.";
+            gMsg.style.color = "#ffaaaa";
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        if (gMsg) {
+          gMsg.textContent = "Network error occurred.";
+          gMsg.style.color = "#ffaaaa";
+        }
       }
     }
     async function bookTransport(){
@@ -866,15 +880,28 @@
           if(tMsg) { tMsg.textContent="Please complete all fields."; tMsg.style.color="#ffaaaa"; }
           return; 
       }
-      fetch('/api/book-transport', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-      }).then(r => r.json()).catch(e => console.error(e));
-      
-      if(tMsg) {
-          tMsg.textContent = "Transport request received! You'll get driver details after assignment.";
-          tMsg.style.color = "#9fe29f";
+      try {
+        const r = await fetch('/api/book-transport', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data)
+        });
+        const res = await r.json();
+        if (tMsg) {
+          if (r.ok && res.success) {
+            tMsg.textContent = res.message;
+            tMsg.style.color = "#9fe29f";
+          } else {
+            tMsg.textContent = res.error || "Failed to submit request.";
+            tMsg.style.color = "#ffaaaa";
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        if (tMsg) {
+          tMsg.textContent = "Network error occurred.";
+          tMsg.style.color = "#ffaaaa";
+        }
       }
     }
     
@@ -900,28 +927,42 @@
       if (!data.name || !data.phone || !data.date || !data.activity) { 
         document.getElementById('aMsg').textContent = "Please fill name, phone, activity and date.";
         document.getElementById('aMsg').style.color = "#ffaaaa"; 
-        return; 
+        return;
       }
-      
-      // Save to localStorage (simulating booking)
-      fetch('/api/book-activity', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-      }).then(r => r.json()).catch(e => console.error(e));
-      
-      document.getElementById('aMsg').textContent = "Activity booking request submitted! We'll confirm within 24 hours.";
-      document.getElementById('aMsg').style.color = "#9fe29f";
-      
-      // Clear form
-      document.getElementById('aName').value = '';
-      document.getElementById('aPhone').value = '';
-      document.getElementById('aEmail').value = '';
-      document.getElementById('aActivity').value = '';
-      document.getElementById('aLocation').value = '';
-      document.getElementById('aParticipants').value = '';
-      document.getElementById('aDate').value = '';
-      document.getElementById('aRequirements').value = '';
+      try {
+        const r = await fetch('/api/book-activity', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data)
+        });
+        const res = await r.json();
+        
+        const msgEl = document.getElementById('aMsg');
+        if (msgEl) {
+          if (r.ok && res.success) {
+            msgEl.textContent = res.message;
+            msgEl.style.color = "#9fe29f";
+            
+            // Clear form
+            document.getElementById('aName').value = '';
+            document.getElementById('aPhone').value = '';
+            document.getElementById('aEmail').value = '';
+            document.getElementById('aParticipants').value = '1';
+            document.getElementById('aDate').value = '';
+            document.getElementById('aRequirements').value = '';
+          } else {
+            msgEl.textContent = res.error || "Failed to submit request.";
+            msgEl.style.color = "#ffaaaa";
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        const msgEl = document.getElementById('aMsg');
+        if (msgEl) {
+          msgEl.textContent = "Network error occurred.";
+          msgEl.style.color = "#ffaaaa";
+        }
+      }
     }
 
     // --------- Quick itinerary generator ----------

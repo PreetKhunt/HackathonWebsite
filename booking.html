@@ -242,14 +242,20 @@
                 })
                 .then(res => res.json())
                 .then(data => {
-                    // Redirect to success page, pass needed data via URL encoding or local storage
-                    const qs = new URLSearchParams({
-                        ref: data.id || 'REF' + Math.floor(Math.random()*10000),
-                        pid: response.razorpay_payment_id,
-                        pkg: packageName,
-                        amt: amount
-                    }).toString();
-                    window.location.href = 'success.html?' + qs;
+                    if (data.success) {
+                        // Redirect to success page, pass needed data via URL encoding or local storage
+                        const qs = new URLSearchParams({
+                            ref: data.id || 'REF' + Math.floor(Math.random()*10000),
+                            pid: response.razorpay_payment_id,
+                            pkg: packageName,
+                            amt: amount
+                        }).toString();
+                        window.location.href = 'success.html?' + qs;
+                    } else {
+                        alert("Payment succeeded but saving failed: " + (data.error || "Unknown error") + "\nPlease contact support with Payment ID: " + response.razorpay_payment_id);
+                        btn.textContent = "Pay Now ₹" + amount;
+                        btn.disabled = false;
+                    }
                 })
                 .catch(err => {
                     console.error('Error saving booking:', err);
