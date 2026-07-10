@@ -217,8 +217,10 @@
         };
 
         // Open Razorpay
+        const configRes = await fetch(`${window.API_BASE}/config/razorpay`);
+        const configData = await configRes.json();
         var options = {
-            "key": "rzp_test_T93BIkzoKFfaUG",
+            "key": configData.key_id,
             "amount": amount * 100, // paise
             "currency": "INR",
             "name": "Jharkhand Tourism",

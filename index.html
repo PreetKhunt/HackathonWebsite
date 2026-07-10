@@ -791,12 +791,7 @@
       </article>
     `).join('');
 
-    // -------- Guide & Transport (localStorage to simulate booking) ----------
-    function save(key, payload){
-      const arr = JSON.parse(localStorage.getItem(key) || '[]');
-      arr.push({...payload, ts: new Date().toISOString()});
-      localStorage.setItem(key, JSON.stringify(arr));
-    }
+    // -------- Guide & Transport ----------
     async function bookGuide(){
       const session = await getSession();
       if (!session) {

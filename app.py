@@ -18,6 +18,10 @@ app.config['SECRET_KEY'] = 'dev-secret-key'
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 
+# Razorpay configuration
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
+
 # Initialize Supabase client
 supabase = None
 if create_client and SUPABASE_URL and SUPABASE_KEY:
@@ -274,14 +278,19 @@ def chat():
 
 @app.route('/api/places')
 def get_places():
-    if supabase:
-        try:
-            result = supabase.table('places').select('*').execute()
-            if result.data:
-                return jsonify(result.data)
-        except Exception as e:
-            print(f"Error fetching from Supabase: {e}")
-    return jsonify(FALLBACK_PLACES)
+    if not supabase:
+        return jsonify(FALLBACK_PLACES)
+        
+    try:
+        response = supabase.table('places').select('*').execute()
+        return jsonify(response.data)
+    except Exception as e:
+        print(f"Error fetching places: {e}")
+        return jsonify(FALLBACK_PLACES)
+
+@app.route('/api/config/razorpay')
+def get_razorpay_config():
+    return jsonify({'key_id': RAZORPAY_KEY_ID})
 
 
 def no_cache_jsonify(*args, **kwargs):
@@ -364,7 +373,7 @@ def get_package_bookings():
     return no_cache_jsonify([])
 
 @app.route('/api/admin/stats')
-def get_admin_stats():
+def get_stats():
     if supabase:
         try:
             # Get total counts
