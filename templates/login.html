@@ -62,8 +62,8 @@
 
         
         <div class="auth-links">
-            <p>Don't have an account? <a href="/signup">Sign up here</a></p>
-            <p><a href="/">Back to Home</a></p>
+            <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
+            <p><a href="../index.html">Back to Home</a></p>
         </div>
     </div>
 
@@ -72,13 +72,13 @@
         // Redirect if already logged in
         getSession().then(session => {
             if (session) {
-                window.location.href = '/';
+                window.location.href = '../index.html';
             }
         });
 
         document.getElementById('googleLoginBtn').addEventListener('click', async () => {
             const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || window.location.origin;
-            await supabase.auth.signInWithOAuth({
+            await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: redirectUrl
@@ -93,8 +93,8 @@
                 showAlert('Please enter your email address first', 'error');
                 return;
             }
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin + '/profile'
+            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/templates/profile.html'
             });
             if (error) {
                 showAlert(error.message, 'error');
@@ -113,7 +113,7 @@
             };
             
             try {
-                const { data: authData, error } = await supabase.auth.signInWithPassword({
+                const { data: authData, error } = await supabaseClient.auth.signInWithPassword({
                     email: data.email,
                     password: data.password
                 });

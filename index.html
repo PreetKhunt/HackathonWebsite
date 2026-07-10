@@ -159,7 +159,7 @@
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/auth.js"></script>
+  <script src="auth.js"></script>
 </head>
 <body>
   <header class="nav">
@@ -716,7 +716,7 @@
       <div>
         <div class="kicker">Contact</div>
         <p class="notice">support@jharkhand-tourism.experiences · +91 9313343179</p>
-        <p class="notice">Ranchi, Jharkhand, India | <a href="/admin" style="color:inherit;text-decoration:underline">Admin Panel</a></p>
+        <p class="notice">Ranchi, Jharkhand, India | <a href="templates/admin.html" style="color:inherit;text-decoration:underline">Admin Panel</a></p>
       </div>
     </div>
   </footer>
@@ -871,7 +871,7 @@
       const session = await getSession();
       if (!session) {
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = '/login';
+        window.location.href = 'templates/login.html';
         return;
       }
       const data = {

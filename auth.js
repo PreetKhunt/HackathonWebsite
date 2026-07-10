@@ -2,11 +2,11 @@
 const SUPABASE_URL = "https://jbiovrijnxrjmpkawlgx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpiaW92cmlqbnhyam1wa2F3bGd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2OTYzNTksImV4cCI6MjA5OTI3MjM1OX0.yONZqb3vxkv1i-riYgn_qSdt0Zgt4DHVPlBV8vf1AUU";
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Helper to get current session
 async function getSession() {
-    const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await supabaseClient.auth.getSession();
     if (error) console.error("Error getting session:", error);
     return data.session;
 }
@@ -33,7 +33,7 @@ async function requireAuth() {
     const session = await getSession();
     if (!session) {
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = '/login';
+        window.location.href = 'templates/login.html';
         return null;
     }
     return session.user;
@@ -66,7 +66,7 @@ async function updateNavbar() {
                 <span>${name}</span>
             </div>
             <div class="dropdown-content" style="display:none;position:absolute;right:0;background:white;box-shadow:0 8px 16px rgba(0,0,0,0.1);min-width:160px;z-index:100;border-radius:4px;">
-                <a href="/profile" style="display:block;padding:12px;color:#333;text-decoration:none;">My Profile</a>
+                <a href="templates/profile.html" style="display:block;padding:12px;color:#333;text-decoration:none;">My Profile</a>
                 <a href="#" id="logoutBtn" style="display:block;padding:12px;color:#d32f2f;text-decoration:none;">Logout</a>
             </div>
         `;
@@ -78,8 +78,8 @@ async function updateNavbar() {
         
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
-            await supabase.auth.signOut();
-            window.location.href = '/';
+            await supabaseClient.auth.signOut();
+            window.location.href = 'index.html';
         });
     } else {
         const loginLink = document.createElement('a');
@@ -90,7 +90,7 @@ async function updateNavbar() {
         
         const signupLink = document.createElement('a');
         signupLink.className = 'auth-nav-item';
-        signupLink.href = '/signup';
+        signupLink.href = 'templates/signup.html';
         signupLink.textContent = 'Sign Up';
         signupLink.style.padding = '8px 16px';
         signupLink.style.background = '#667eea';
@@ -109,13 +109,13 @@ async function handleBookingClick(e, bookingFunction) {
     if (!session) {
         // Save current scroll or context if needed, then redirect
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = '/login';
+        window.location.href = 'templates/login.html';
     } else {
         bookingFunction();
     }
 }
 
 // Listen for auth state changes to update UI instantly
-supabase.auth.onAuthStateChange((event, session) => {
+supabaseClient.auth.onAuthStateChange((event, session) => {
     updateNavbar();
 });

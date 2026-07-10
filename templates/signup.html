@@ -72,8 +72,8 @@
 
         
         <div class="auth-links">
-            <p>Already have an account? <a href="/login">Sign in here</a></p>
-            <p><a href="/">Back to Home</a></p>
+            <p>Already have an account? <a href="login.html">Sign in here</a></p>
+            <p><a href="../index.html">Back to Home</a></p>
         </div>
     </div>
 
@@ -82,13 +82,13 @@
         // Redirect if already logged in
         getSession().then(session => {
             if (session) {
-                window.location.href = '/';
+                window.location.href = '../index.html';
             }
         });
 
         document.getElementById('googleLoginBtn').addEventListener('click', async () => {
             const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || window.location.origin;
-            await supabase.auth.signInWithOAuth({
+            await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: redirectUrl
@@ -115,7 +115,7 @@
             };
             
             try {
-                const { data: authData, error } = await supabase.auth.signUp({
+                const { data: authData, error } = await supabaseClient.auth.signUp({
                     email: data.email,
                     password: data.password,
                     options: {
@@ -130,7 +130,7 @@
                 } else {
                     showAlert('Account created successfully! Redirecting to home...', 'success');
                     setTimeout(() => {
-                        window.location.href = '/';
+                        window.location.href = '../index.html';
                     }, 2000);
                 }
             } catch (error) {
