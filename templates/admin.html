@@ -47,6 +47,10 @@
                 <div>Activity Bookings</div>
             </div>
             <div class="stat-card">
+                <div class="stat-number" id="packageCount">0</div>
+                <div>Package Bookings</div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-number" id="totalCount">0</div>
                 <div>Total Bookings</div>
             </div>
@@ -81,13 +85,23 @@
                 <tbody></tbody>
             </table>
         </div>
+
+        <div class="section">
+            <div class="section-header">dY? Package Bookings</div>
+            <table id="packageTable">
+                <thead>
+                    <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Package</th><th>A/C</th><th>Travel Date</th><th>Amount</th><th>Pay Status</th><th>Pay ID</th><th>Created</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
         const API_BASE = '/api';
 
         async function loadAllData() {
-            await Promise.all([loadGuideBookings(), loadTransportBookings(), loadActivityBookings(), loadStats()]);
+            await Promise.all([loadGuideBookings(), loadTransportBookings(), loadActivityBookings(), loadPackageBookings(), loadStats()]);
         }
 
         async function loadStats() {
@@ -98,11 +112,12 @@
                 document.getElementById('guideCount').textContent = stats.total.guide;
                 document.getElementById('transportCount').textContent = stats.total.transport;
                 document.getElementById('activityCount').textContent = stats.total.activity;
-                document.getElementById('totalCount').textContent = stats.total.guide + stats.total.transport + stats.total.activity;
+                document.getElementById('packageCount').textContent = stats.total.package || 0;
+                document.getElementById('totalCount').textContent = stats.total.guide + stats.total.transport + stats.total.activity + (stats.total.package || 0);
                 
                 // Add today's stats if they exist
                 if (stats.today) {
-                    const todayTotal = stats.today.guide + stats.today.transport + stats.today.activity;
+                    const todayTotal = stats.today.guide + stats.today.transport + stats.today.activity + (stats.today.package || 0);
                     if (todayTotal > 0) {
                         const existingTodayStats = document.querySelector('.today-stats');
                         if (existingTodayStats) existingTodayStats.remove();
@@ -121,6 +136,10 @@
                             <div class="stat-card">
                                 <div class="stat-number" style="color: #e74c3c;">${stats.today.activity}</div>
                                 <div>Today's Activities</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" style="color: #e74c3c;">${stats.today.package || 0}</div>
+                                <div>Today's Packages</div>
                             </div>
                             <div class="stat-card">
                                 <div class="stat-number" style="color: #e74c3c;">${todayTotal}</div>
@@ -197,24 +216,34 @@
             }
         }
 
-        // Load all data on page load
-        document.addEventListener('DOMContentLoaded', loadAllData);
-    </script>
-</body>
-</html>.date}</td>
+        async function loadPackageBookings() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/package-bookings`);
+                const bookings = await response.json();
+                const tbody = document.querySelector('#packageTable tbody');
+                tbody.innerHTML = bookings.map(b => `
+                    <tr>
+                        <td>${b.id}</td>
+                        <td>${b.name}</td>
+                        <td>${b.email}</td>
+                        <td>${b.phone}</td>
+                        <td>${b.package_name}</td>
+                        <td>${b.adults} / ${b.children}</td>
+                        <td>${b.date}</td>
+                        <td>?${b.amount}</td>
+                        <td>${b.payment_status}</td>
+                        <td>${b.payment_id || 'N/A'}</td>
                         <td>${new Date(b.created_at).toLocaleDateString()}</td>
                     </tr>
                 `).join('');
             } catch (error) {
-                console.error('Error loading activity bookings:', error);
+                console.error('Error loading package bookings:', error);
             }
         }
 
-        // Load data on page load
+        // Load all data on page load
         loadAllData();
-        
-        // Auto-refresh every 30 seconds
-        setInterval(loadAllData, 30000);
+        setInterval(loadAllData, 10000);
     </script>
 </body>
 </html>

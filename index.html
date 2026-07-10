@@ -804,7 +804,11 @@
         date: gDate.value
       };
       if(!data.name || !data.phone || !data.date){ gMsg.textContent = "Please fill name, phone and date."; gMsg.style.color = "#ffaaaa"; return; }
-      save('guideBookings', data);
+      fetch('/api/book-guide', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      }).then(r => r.json()).catch(e => console.error(e));
       gMsg.textContent = "Guide request submitted! We'll confirm availability shortly.";
       gMsg.style.color = "#9fe29f";
       // simple itinerary kick
@@ -820,7 +824,11 @@
         when: tDate.value
       };
       if(!data.name || !data.from || !data.to || !data.when){ tMsg.textContent="Please complete all fields."; tMsg.style.color="#ffaaaa"; return; }
-      save('transportBookings', data);
+      fetch('/api/book-transport', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      }).then(r => r.json()).catch(e => console.error(e));
       tMsg.textContent = "Transport request received! You'll get driver details after assignment.";
       tMsg.style.color = "#9fe29f";
     }
@@ -845,9 +853,11 @@
       }
       
       // Save to localStorage (simulating booking)
-      const arr = JSON.parse(localStorage.getItem('activityBookings') || '[]');
-      arr.push({...data, ts: new Date().toISOString()});
-      localStorage.setItem('activityBookings', JSON.stringify(arr));
+      fetch('/api/book-activity', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      }).then(r => r.json()).catch(e => console.error(e));
       
       document.getElementById('aMsg').textContent = "Activity booking request submitted! We'll confirm within 24 hours.";
       document.getElementById('aMsg').style.color = "#9fe29f";
@@ -1047,10 +1057,7 @@
           ],
           Hindi: [
             "झारखंड में घूमने के लिए कई सुंदर स्थान हैं! लोकप्रिय गंतव्यों में दासम फॉल्स, बेतला राष्ट्रीय उद्यान, हुंडरू फॉल्स और जगन्नाथ मंदिर शामिल हैं।",
-            "आपको झारखंड के अद्भुत झरनों को अवश्य देख�    // footer year
-    document.getElementById('yr').textContent = new Date().getFullYear();
-  </script>
-</body>ncludes('hi') || question.includes('hey') || question.includes('namaste')) {
+            "आपको झारखंड के अद्भुत झरनों को अवश्य देख      else if (question.includes('hello') || question.includes('hi') || question.includes('hey') || question.includes('namaste')) {
         const responses = {
           English: [
             "Hello! How can I assist you with your Jharkhand travel plans today?",
@@ -1117,36 +1124,6 @@
 
     // footer year
     document.getElementById('yr').textContent = new Date().getFullYear();
-
-    function payForPackage(packageName, amount) {
-        var options = {
-            "key": "rzp_test_T93BIkzoKFfaUG",
-            "amount": amount * 100, 
-            "currency": "INR",
-            "name": "Jharkhand Tourism",
-            "description": packageName + " Package Booking",
-            "image": "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=100",
-            "handler": function (response){
-                alert('Payment successful! Your Payment ID: ' + response.razorpay_payment_id + '\\nYour booking for the ' + packageName + ' package has been confirmed. You will receive confirmation details via email.');
-            },
-            "prefill": {
-                "name": "Guest User",
-                "email": "guest@example.com",
-                "contact": "9999999999"
-            },
-            "theme": {
-                "color": "#667eea"
-            }
-        };
-        var rzp1 = new window.Razorpay(options);
-        
-        rzp1.on('payment.failed', function (response){
-                alert("Payment Failed! Reason: " + response.error.description);
-        });
-        
-        rzp1.open();
-    }
   </script>
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </body>
 </html>
