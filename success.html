@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Booking Success - Jharkhand Tourism</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f1115; --card:#151923; --muted:#9ba3b4; --pri:#73d13d; --pri-2:#3bd1c4; --acc:#ffd166; --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:#e7ecf3;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial; min-height: 100vh; display: flex; flex-direction: column;}
+    a{color:inherit;text-decoration:none}
+    .container{width:min(1180px,92%);margin:auto}
+    header.nav{
+      position:sticky;top:0;z-index:50;background:rgba(15,17,21,.7);backdrop-filter:saturate(180%) blur(14px);
+      border-bottom:1px solid #242a36;
+    }
+    .nav-inner{display:flex;align-items:center;justify-content:space-between;padding:.8rem 0}
+    .brand{display:flex;gap:.6rem;align-items:center}
+    .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--pri),var(--pri-2));display:grid;place-items:center;font-weight:700;color:#0b0e13}
+    .menu{display:flex;gap:1rem;font-size:.95rem}
+    .menu a{opacity:.9;padding:.4rem .7rem;border-radius:10px}
+    .menu a:hover{background:#1b2130}
+    .btn{display:inline-block;background:linear-gradient(135deg,var(--pri),var(--pri-2));color:#0b0e13;padding:.7rem 1rem;border:none;border-radius:12px;font-weight:700;cursor:pointer; text-align: center;}
+    .btn-outline{background:transparent;border:1px solid #2b3446;color:#e7ecf3}
+    .card{background:var(--card);border:1px solid #242a36;border-radius:18px;overflow:hidden;padding:2.5rem; text-align: center; max-width: 600px; margin: 0 auto;}
+    section{padding:5rem 0; flex: 1;}
+    h2{font-size:clamp(1.3rem,2.3vw,1.7rem);margin:.2rem 0 1rem}
+    .muted{color:var(--muted)}
+    
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(115, 209, 61, 0.1);
+        color: var(--pri);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        margin: 0 auto 1.5rem auto;
+    }
+    
+    .details-box {
+        background: #1a1f2c;
+        border: 1px solid #2b3446;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        text-align: left;
+    }
+    .details-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #242a36;
+    }
+    .details-row:last-child {
+        border-bottom: none;
+    }
+    .details-label {
+        color: var(--muted);
+    }
+    .details-value {
+        font-weight: 600;
+        color: #e7ecf3;
+    }
+    
+    .footer{padding:2rem 0;border-top:1px solid #242a36;color:#b7bfcd; margin-top: auto;}
+    .notice{font-size:.85rem;color:#9fb0c8}
+    .kicker{letter-spacing:.18em;text-transform:uppercase;color:#9fb0c8;font-size:.75rem}
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <div class="brand">
+        <div class="logo">JT</div>
+        <div>
+          <strong>Jharkhand Tourism</strong><br>
+          <span class="kicker">Eco & Culture Platform</span>
+        </div>
+      </div>
+      <nav class="menu">
+        <a href="index.html#places">Places</a>
+        <a href="index.html#packages">Packages</a>
+      </nav>
+      <a class="btn btn-outline" href="index.html">Back Home</a>
+    </div>
+  </header>
+
+  <section>
+    <div class="container">
+      <div class="card">
+        <div class="success-icon">✓</div>
+        <h2>Booking Confirmed!</h2>
+        <p class="muted">Thank you for booking with Jharkhand Tourism. Your payment was successful.</p>
+        
+        <div class="details-box">
+            <div class="details-row">
+                <span class="details-label">Booking Reference:</span>
+                <span class="details-value" id="sRef">-</span>
+            </div>
+            <div class="details-row">
+                <span class="details-label">Payment ID:</span>
+                <span class="details-value" id="sPid">-</span>
+            </div>
+            <div class="details-row">
+                <span class="details-label">Package Name:</span>
+                <span class="details-value" id="sPkg">-</span>
+            </div>
+            <div class="details-row">
+                <span class="details-label">Amount Paid:</span>
+                <span class="details-value" id="sAmt">-</span>
+            </div>
+            <div class="details-row">
+                <span class="details-label">Date & Time:</span>
+                <span class="details-value" id="sDate">-</span>
+            </div>
+        </div>
+        
+        <a href="index.html" class="btn" style="width: 100%;">Return to Home</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container two-col">
+      <div>
+        <div class="brand">
+          <div class="logo">JT</div>
+          <div><strong>Jharkhand Tourism</strong><div class="kicker">Inclusive · Organized · Sustainable</div></div>
+        </div>
+        <p class="notice" style="margin-top:.6rem">
+          © <span id="yr"></span> Jharkhand Eco & Cultural Tourism.
+        </p>
+      </div>
+      <div>
+        <div class="kicker">Contact</div>
+        <p class="notice">support@jharkhand-tourism.experiences · +91 9313343179</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    // Parse URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    document.getElementById('sRef').textContent = urlParams.get('ref') || 'N/A';
+    document.getElementById('sPid').textContent = urlParams.get('pid') || 'N/A';
+    document.getElementById('sPkg').textContent = urlParams.get('pkg') || 'N/A';
+    
+    const amt = urlParams.get('amt');
+    document.getElementById('sAmt').textContent = amt ? '₹' + amt : 'N/A';
+    
+    const now = new Date();
+    document.getElementById('sDate').textContent = now.toLocaleString();
+  </script>
+</body>
+</html>

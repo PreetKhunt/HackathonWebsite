@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Package Booking - Jharkhand Tourism</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f1115; --card:#151923; --muted:#9ba3b4; --pri:#73d13d; --pri-2:#3bd1c4; --acc:#ffd166; --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:#e7ecf3;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+    a{color:inherit;text-decoration:none}
+    .container{width:min(1180px,92%);margin:auto}
+    header.nav{
+      position:sticky;top:0;z-index:50;background:rgba(15,17,21,.7);backdrop-filter:saturate(180%) blur(14px);
+      border-bottom:1px solid #242a36;
+    }
+    .nav-inner{display:flex;align-items:center;justify-content:space-between;padding:.8rem 0}
+    .brand{display:flex;gap:.6rem;align-items:center}
+    .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--pri),var(--pri-2));display:grid;place-items:center;font-weight:700;color:#0b0e13}
+    .menu{display:flex;gap:1rem;font-size:.95rem}
+    .menu a{opacity:.9;padding:.4rem .7rem;border-radius:10px}
+    .menu a:hover{background:#1b2130}
+    .btn{display:inline-block;background:linear-gradient(135deg,var(--pri),var(--pri-2));color:#0b0e13;padding:.7rem 1rem;border:none;border-radius:12px;font-weight:700;cursor:pointer}
+    .btn-outline{background:transparent;border:1px solid #2b3446;color:#e7ecf3}
+    .card{background:var(--card);border:1px solid #242a36;border-radius:18px;overflow:hidden;padding:1.5rem}
+    section{padding:3rem 0}
+    h2{font-size:clamp(1.3rem,2.3vw,1.7rem);margin:.2rem 0 1rem}
+    .muted{color:var(--muted)}
+    .price{font-size:1.8rem;font-weight:800; color: var(--pri);}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    @media (max-width:800px){.two-col{grid-template-columns:1fr}}
+    .stack{display:grid;gap:.6rem}
+    label{font-size:.9rem;color:#cfd6e2; display:block; margin-bottom: 0.3rem;}
+    input, select, textarea{
+      background:#0d111a;border:1px solid #2b3446;color:#e7ecf3;border-radius:12px;padding:.7rem .9rem;outline:none;width:100%; font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--pri);
+    }
+    .footer{padding:2rem 0;border-top:1px solid #242a36;color:#b7bfcd; margin-top: 3rem;}
+    .notice{font-size:.85rem;color:#9fb0c8}
+    .kicker{letter-spacing:.18em;text-transform:uppercase;color:#9fb0c8;font-size:.75rem}
+    
+    .booking-summary {
+        background: #1a1f2c;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 4px solid var(--pri);
+        margin-bottom: 2rem;
+    }
+    .booking-summary h3 { margin-top: 0; }
+    
+    .error-msg {
+        color: var(--danger);
+        font-size: 0.85rem;
+        display: none;
+        margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <div class="brand">
+        <div class="logo">JT</div>
+        <div>
+          <strong>Jharkhand Tourism</strong><br>
+          <span class="kicker">Eco & Culture Platform</span>
+        </div>
+      </div>
+      <nav class="menu">
+        <a href="index.html#places">Places</a>
+        <a href="index.html#cultural">Cultural</a>
+        <a href="index.html#activities">Activities</a>
+        <a href="index.html#packages">Packages</a>
+      </nav>
+      <a class="btn btn-outline" href="index.html">Back Home</a>
+    </div>
+  </header>
+
+  <section>
+    <div class="container">
+      <h2>Complete Your Booking</h2>
+      <p class="muted">Please provide your details below to confirm your tour package.</p>
+      
+      <div class="booking-summary">
+          <h3>Booking Summary</h3>
+          <p><strong>Package:</strong> <span id="summary-package">-</span></p>
+          <p><strong>Duration:</strong> <span id="summary-duration">-</span></p>
+          <p class="price">Total: ₹<span id="summary-price">0</span></p>
+      </div>
+
+      <div class="card">
+        <form id="bookingForm" onsubmit="handleFormSubmit(event)">
+            <div class="two-col" style="margin-bottom: 1rem;">
+                <div>
+                    <label>Full Name *</label>
+                    <input type="text" id="bName" required placeholder="John Doe">
+                </div>
+                <div>
+                    <label>Email Address *</label>
+                    <input type="email" id="bEmail" required placeholder="john@example.com">
+                </div>
+            </div>
+            <div class="two-col" style="margin-bottom: 1rem;">
+                <div>
+                    <label>Phone Number *</label>
+                    <input type="tel" id="bPhone" required placeholder="+91 9999999999">
+                </div>
+                <div>
+                    <label>Travel Date *</label>
+                    <input type="date" id="bDate" required>
+                </div>
+            </div>
+            <div class="two-col" style="margin-bottom: 1rem;">
+                <div>
+                    <label>Number of Adults *</label>
+                    <input type="number" id="bAdults" min="1" value="2" required>
+                </div>
+                <div>
+                    <label>Number of Children</label>
+                    <input type="number" id="bChildren" min="0" value="0">
+                </div>
+            </div>
+            <div class="two-col" style="margin-bottom: 1rem;">
+                <div>
+                    <label>City *</label>
+                    <input type="text" id="bCity" required>
+                </div>
+                <div>
+                    <label>State *</label>
+                    <input type="text" id="bState" required>
+                </div>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label>Country *</label>
+                <input type="text" id="bCountry" value="India" required>
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label>Special Requests</label>
+                <textarea id="bRequests" rows="3" placeholder="Dietary requirements, accessibility needs, etc."></textarea>
+            </div>
+            
+            <p id="errorMsg" class="error-msg">Please fill out all required fields.</p>
+            <button type="submit" class="btn" style="width: 100%; font-size: 1.1rem; padding: 1rem;">Pay Now ₹<span id="btn-price">0</span></button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container two-col">
+      <div>
+        <div class="brand">
+          <div class="logo">JT</div>
+          <div><strong>Jharkhand Tourism</strong><div class="kicker">Inclusive · Organized · Sustainable</div></div>
+        </div>
+        <p class="notice" style="margin-top:.6rem">
+          © <span id="yr"></span> Jharkhand Eco & Cultural Tourism.
+        </p>
+      </div>
+      <div>
+        <div class="kicker">Contact</div>
+        <p class="notice">support@jharkhand-tourism.experiences · +91 9313343179</p>
+        <p class="notice">Ranchi, Jharkhand, India</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    // Parse URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const packageName = urlParams.get('package') || 'Budget';
+    const amount = urlParams.get('price') || '6999';
+    const duration = urlParams.get('duration') || '3D/2N';
+
+    // Set summary
+    document.getElementById('summary-package').textContent = packageName;
+    document.getElementById('summary-price').textContent = amount;
+    document.getElementById('summary-duration').textContent = duration;
+    document.getElementById('btn-price').textContent = amount;
+
+    function handleFormSubmit(e) {
+        e.preventDefault(); // Prevent standard form submission
+        
+        const formDetails = {
+            name: document.getElementById('bName').value,
+            email: document.getElementById('bEmail').value,
+            phone: document.getElementById('bPhone').value,
+            date: document.getElementById('bDate').value,
+            adults: parseInt(document.getElementById('bAdults').value),
+            children: parseInt(document.getElementById('bChildren').value) || 0,
+            city: document.getElementById('bCity').value,
+            state: document.getElementById('bState').value,
+            country: document.getElementById('bCountry').value,
+            special_requests: document.getElementById('bRequests').value,
+            package_name: packageName,
+            amount: parseFloat(amount)
+        };
+
+        // Open Razorpay
+        var options = {
+            "key": "rzp_test_T93BIkzoKFfaUG",
+            "amount": amount * 100, // paise
+            "currency": "INR",
+            "name": "Jharkhand Tourism",
+            "description": packageName + " Package Booking",
+            "image": "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=100",
+            "handler": function (response){
+                // Payment Success
+                formDetails.payment_id = response.razorpay_payment_id;
+                formDetails.payment_status = 'paid';
+                
+                // Show a brief loading state on button
+                const btn = document.querySelector('button[type="submit"]');
+                btn.textContent = "Saving Booking...";
+                btn.disabled = true;
+
+                // Save to backend API
+                fetch('/api/book-package', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formDetails)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    // Redirect to success page, pass needed data via URL encoding or local storage
+                    const qs = new URLSearchParams({
+                        ref: data.id || 'REF' + Math.floor(Math.random()*10000),
+                        pid: response.razorpay_payment_id,
+                        pkg: packageName,
+                        amt: amount
+                    }).toString();
+                    window.location.href = 'success.html?' + qs;
+                })
+                .catch(err => {
+                    console.error('Error saving booking:', err);
+                    alert("Payment succeeded but saving failed. Please contact support with Payment ID: " + response.razorpay_payment_id);
+                    btn.textContent = "Pay Now ₹" + amount;
+                    btn.disabled = false;
+                });
+            },
+            "prefill": {
+                "name": formDetails.name,
+                "email": formDetails.email,
+                "contact": formDetails.phone
+            },
+            "theme": {
+                "color": "#73d13d"
+            }
+        };
+
+        var rzp1 = new window.Razorpay(options);
+        rzp1.on('payment.failed', function (response){
+            alert("Payment Failed! Reason: " + response.error.description);
+            // form data is kept as is
+        });
+        rzp1.open();
+    }
+  </script>
+</body>
+</html>

@@ -73,6 +73,29 @@ CREATE TABLE IF NOT EXISTS activity_bookings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Package bookings table
+CREATE TABLE IF NOT EXISTS package_bookings (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    adults INTEGER NOT NULL,
+    children INTEGER NOT NULL,
+    date DATE NOT NULL,
+    city VARCHAR(100),
+    state VARCHAR(100),
+    country VARCHAR(100),
+    special_requests TEXT,
+    package_name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    payment_status VARCHAR(50) DEFAULT 'pending',
+    payment_id VARCHAR(255),
+    amount DECIMAL(10,2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Places table (enhanced)
 CREATE TABLE IF NOT EXISTS places (
     id SERIAL PRIMARY KEY,

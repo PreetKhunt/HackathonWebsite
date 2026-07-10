@@ -113,6 +113,26 @@ def book_activity():
             print(f"Error saving to Supabase: {e}")
     return jsonify({'success': True, 'message': 'Activity booking submitted successfully'})
 
+@app.route('/api/book-package', methods=['POST'])
+def book_package():
+    data = request.json or {}
+    
+    # Required fields validation (optional but good practice)
+    required_fields = ['name', 'email', 'phone', 'package_name', 'date', 'amount', 'payment_id', 'payment_status']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
+
+    if supabase:
+        try:
+            result = supabase.table('package_bookings').insert(data).execute()
+            return jsonify({'success': True, 'message': 'Package booking submitted successfully', 'id': result.data[0]['id'] if result.data else None})
+        except Exception as e:
+            print(f"Error saving to Supabase: {e}")
+            return jsonify({'success': False, 'message': 'Failed to save booking'}), 500
+    
+    return jsonify({'success': True, 'message': 'Package booking submitted successfully (fallback mode)'})
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.json or {}
