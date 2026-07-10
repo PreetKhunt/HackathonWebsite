@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: jharkhand-tourism-backend
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: SUPABASE_URL
+        fromDatabase:
+          name: SUPABASE_URL
+      - key: SUPABASE_ANON_KEY
+        fromDatabase:
+          name: SUPABASE_ANON_KEY
+      - key: RAZORPAY_KEY_ID
+        fromDatabase:
+          name: RAZORPAY_KEY_ID
+      - key: RAZORPAY_KEY_SECRET
+        fromDatabase:
+          name: RAZORPAY_KEY_SECRET
