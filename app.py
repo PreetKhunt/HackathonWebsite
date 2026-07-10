@@ -111,22 +111,28 @@ def book_guide():
     }
     
     if supabase:
+        print(f"Incoming guide booking JSON: {booking_data}")
+        mapped_data = {
+            'name': booking_data.get('name', 'Unknown'),
+            'email': booking_data.get('email') or (user.email if user else 'unknown@email.com'),
+            'phone': booking_data.get('phone', '0000000000'),
+            'places': ', '.join(booking_data.get('place', [])),
+            'date': booking_data.get('date'),
+            'duration': 1,
+            'group_size': 1,
+            'special_requirements': f"Language: {booking_data.get('lang', '')}",
+            'user_id': user.id
+        }
+        print(f"Mapped guide booking data: {mapped_data}")
         try:
-            mapped_data = {
-                'name': booking_data.get('name', 'Unknown'),
-                'email': booking_data.get('email') or (user.email if user else 'unknown@email.com'),
-                'phone': booking_data.get('phone', '0000000000'),
-                'places': ', '.join(booking_data.get('place', [])),
-                'date': booking_data.get('date'),
-                'duration': 1,
-                'group_size': 1,
-                'special_requirements': f"Language: {booking_data.get('lang', '')}",
-                'user_id': user.id
-            }
             res = supabase.table('guide_bookings').insert(mapped_data).execute()
+            print(f"Supabase insert response: {res.data}")
+            return jsonify({'success': True, 'message': 'Guide booking submitted'})
         except Exception as e:
-            print(f'Error saving guide booking: {e}')
-    return jsonify({'success': True, 'message': 'Guide booking submitted'})
+            error_msg = str(e)
+            print(f"Supabase insert failed for guide_bookings: {error_msg}")
+            return jsonify({'success': False, 'error': error_msg}), 500
+    return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
 
 @app.route('/api/book-transport', methods=['POST'])
 @require_auth
@@ -156,23 +162,29 @@ def book_transport():
     }
 
     if supabase:
+        print(f"Incoming transport booking JSON: {booking_data}")
+        mapped_data = {
+            'name': booking_data.get('name', 'Unknown'),
+            'email': user.email if user else 'unknown@email.com',
+            'phone': '0000000000',
+            'pickup_location': booking_data.get('from', 'Unknown'),
+            'destination': booking_data.get('to', 'Unknown'),
+            'date': booking_data.get('when'),
+            'time': '10:00:00',
+            'passengers': 1,
+            'vehicle_type': booking_data.get('vehicle', 'Sedan'),
+            'user_id': user.id
+        }
+        print(f"Mapped transport booking data: {mapped_data}")
         try:
-            mapped_data = {
-                'name': booking_data.get('name', 'Unknown'),
-                'email': user.email if user else 'unknown@email.com',
-                'phone': '0000000000',
-                'pickup_location': booking_data.get('from', 'Unknown'),
-                'destination': booking_data.get('to', 'Unknown'),
-                'date': booking_data.get('when'),
-                'time': '10:00:00',
-                'passengers': 1,
-                'vehicle_type': booking_data.get('vehicle', 'Sedan'),
-                'user_id': user.id
-            }
             res = supabase.table('transport_bookings').insert(mapped_data).execute()
+            print(f"Supabase insert response: {res.data}")
+            return jsonify({'success': True, 'message': 'Transport booking submitted'})
         except Exception as e:
-            print(f'Error saving transport booking: {e}')
-    return jsonify({'success': True, 'message': 'Transport booking submitted'})
+            error_msg = str(e)
+            print(f"Supabase insert failed for transport_bookings: {error_msg}")
+            return jsonify({'success': False, 'error': error_msg}), 500
+    return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
 
 @app.route('/api/book-activity', methods=['POST'])
 @require_auth
@@ -195,22 +207,28 @@ def book_activity():
     }
 
     if supabase:
+        print(f"Incoming activity booking JSON: {booking_data}")
+        mapped_data = {
+            'name': booking_data.get('name', 'Unknown'),
+            'phone': booking_data.get('phone', '0000000000'),
+            'email': booking_data.get('email') or (user.email if user else 'unknown@email.com'),
+            'activity': booking_data.get('activity', 'General'),
+            'location': booking_data.get('location', 'Unknown'),
+            'participants': int(booking_data.get('participants') or 1),
+            'date': booking_data.get('date'),
+            'experience_level': booking_data.get('requirements', ''),
+            'user_id': user.id
+        }
+        print(f"Mapped activity booking data: {mapped_data}")
         try:
-            mapped_data = {
-                'name': booking_data.get('name', 'Unknown'),
-                'phone': booking_data.get('phone', '0000000000'),
-                'email': booking_data.get('email') or (user.email if user else 'unknown@email.com'),
-                'activity': booking_data.get('activity', 'General'),
-                'location': booking_data.get('location', 'Unknown'),
-                'participants': int(booking_data.get('participants') or 1),
-                'date': booking_data.get('date'),
-                'experience_level': booking_data.get('requirements', ''),
-                'user_id': user.id
-            }
             res = supabase.table('activity_bookings').insert(mapped_data).execute()
+            print(f"Supabase insert response: {res.data}")
+            return jsonify({'success': True, 'message': 'Activity booking submitted'})
         except Exception as e:
-            print(f'Error saving activity booking: {e}')
-    return jsonify({'success': True, 'message': 'Activity booking submitted'})
+            error_msg = str(e)
+            print(f"Supabase insert failed for activity_bookings: {error_msg}")
+            return jsonify({'success': False, 'error': error_msg}), 500
+    return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
 
 @app.route('/api/book-package', methods=['POST'])
 @require_auth
@@ -226,14 +244,19 @@ def book_package():
             return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
 
     if supabase:
+        print(f"Incoming package booking JSON: {data}")
+        mapped_data = data.copy()
+        mapped_data['user_id'] = user.id if user else None
+        print(f"Mapped package booking data: {mapped_data}")
         try:
-            result = supabase.table('package_bookings').insert(data).execute()
+            result = supabase.table('package_bookings').insert(mapped_data).execute()
+            print(f"Supabase insert response: {result.data}")
             return jsonify({'success': True, 'message': 'Package booking submitted successfully', 'id': result.data[0]['id'] if result.data else None})
         except Exception as e:
-            print(f"Error saving to Supabase: {e}")
-            return jsonify({'success': False, 'message': 'Failed to save booking'}), 500
-    
-    return jsonify({'success': True, 'message': 'Package booking submitted successfully (fallback mode)'})
+            error_msg = str(e)
+            print(f"Supabase insert failed for package_bookings: {error_msg}")
+            return jsonify({'success': False, 'error': error_msg}), 500
+    return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
