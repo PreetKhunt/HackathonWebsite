@@ -77,11 +77,10 @@
         });
 
         document.getElementById('googleLoginBtn').addEventListener('click', async () => {
-            const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || window.location.origin;
             await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: redirectUrl
+                    redirectTo: window.location.origin
                 }
             });
         });

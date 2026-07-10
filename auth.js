@@ -42,6 +42,7 @@ async function requireAuth() {
 // Update Navbar UI based on auth state
 async function updateNavbar() {
     const session = await getSession();
+    console.log("Supabase Auth Session (updateNavbar):", session);
     const navLinks = document.querySelector('.nav-links');
     if (!navLinks) return;
     
@@ -118,5 +119,15 @@ async function handleBookingClick(e, bookingFunction) {
 
 // Listen for auth state changes to update UI instantly
 supabaseClient.auth.onAuthStateChange((event, session) => {
+    console.log("onAuthStateChange event:", event, "session:", session);
     updateNavbar();
+});
+
+// Immediately parse session on load for OAuth callbacks
+window.addEventListener('load', async () => {
+    const { data, error } = await supabaseClient.auth.getSession();
+    console.log("Session check on page load:", data.session, "Error:", error);
+    if (error) {
+        console.error("OAuth callback/session error:", error);
+    }
 });
