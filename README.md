@@ -1,17 +1,50 @@
-# Jharkhand Tourism Website - Backend Setup
+# Jharkhand Tourism - Eco & Culture Platform
 
-A full-stack tourism website for Jharkhand with Flask backend and Supabase database.
+**Live Demo:** [https://deluxe-faloodeh-f6baed.netlify.app](https://deluxe-faloodeh-f6baed.netlify.app)
 
-## Features
+A full-stack eco and cultural tourism platform dedicated to showcasing the beauty of Jharkhand. It features a complete frontend experience with a Flask backend, Supabase database, and a fully functional suite of booking and planning tools.
 
-- **Frontend**: Responsive HTML/CSS/JS with modern design
-- **Backend**: Flask REST API
-- **Database**: Supabase (PostgreSQL)
-- **Booking System**: Guide, Transport, and Activity bookings
-- **AI Chatbot**: Rule-based basic responses built-in
-- **Admin Panel**: Booking management system
+## 🌟 Key Features
 
-## Quick Setup
+### 🗺️ Explore Jharkhand
+Discover majestic waterfalls, dense forests, ancient heritage, and warm homestays. The platform highlights the best places to visit, including:
+- **Dassam Falls & Hundru Falls**: Spectacular cascades and monsoon-favorite plunge pools.
+- **Betla National Park**: Jharkhand's classic wildlife safari with elephants and the ruins of Palamu Fort.
+- **Netarhat**: The 'Queen of Chotanagpur' famed for its sunrise/sunset points.
+- **Patratu Valley**: Winding roads, emerald hills, and shimmering lakes.
+- **Baidyanath Temple & Parasnath Hill**: Vibrant religious hubs and vital pilgrimage sites.
+- **Tribal Handicrafts**: Marketplaces featuring local artisans, dokra metal crafts, and bamboo works.
+
+### 🎭 Cultural Heritage
+Immerse yourself in Jharkhand's rich traditions and vibrant communities.
+- **Indigenous Heritage**: Home to 32+ tribes including Santhal, Munda, Oraon, Ho, and Kharia.
+- **Artisan Crafts**: Exquisite Dokra metal casting, Paitkar painting, Sohrai art, and Tassar silk weaving.
+- **Festivals**: Vibrant celebrations like Sarhul, Karam, Tusu Parab, and local village fairs.
+
+### 🧗 Adventure & Activities
+Book thrilling experiences such as:
+- Trekking & Hiking (Parasnath Hill, Tagore Hill)
+- Waterfall Rappelling (Dassam & Hundru Falls)
+- Jungle Safaris (Betla & Palamau)
+- Tribal Village Tours
+- Rock Climbing & River Rafting
+
+### 📦 Tour Packages
+- **Green Getaway (Standard)**: 3D/2N perfect for backpackers with tidy stays and shared transport.
+- **Mystic Trails (Deluxe)**: 5D/4N featuring 3-star hotels, guided tours, and authentic local vibes.
+- **Luxury Highlands (Premium)**: 7D/6N offering private SUVs, eco-resorts/5-star stays, and curated cultural experiences.
+
+### 💻 Platform Tools & Integrations
+- **Razorpay Integration**: Fully functional payment gateway integrated into the booking workflows.
+- **Booking Systems**: Seamless booking for Guides, Transport, Packages, and Activities.
+- **Quick Itinerary Generator**: Generate personalized, balanced travel plans in seconds.
+- **Multilingual Chatbot Assistant**: Ask about travel times, weather, places, and permits (integrated with backend AI).
+- **Interactive Map**: Built with Leaflet & OpenStreetMap to pan, zoom, and explore major sites.
+- **Admin Panel**: Comprehensive dashboard to manage all bookings and view statistics.
+
+---
+
+## 🛠️ Quick Setup (Backend)
 
 ### 1. Install Dependencies
 
@@ -29,7 +62,7 @@ pip install -r requirements.txt
 ### 3. Configure Environment
 
 Edit `.env` file (if missing, create one):
-```
+```env
 SUPABASE_URL=your_supabase_project_url_here
 SUPABASE_ANON_KEY=your_supabase_anon_key_here
 FLASK_ENV=development
@@ -41,10 +74,11 @@ SECRET_KEY=your_secret_key_here
 ```bash
 python app.py
 ```
-
 Visit: http://localhost:5000
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```text
 ├── app.py                      # Flask application main file
@@ -60,7 +94,9 @@ Visit: http://localhost:5000
 └── README.md                   # This file
 ```
 
-## API Endpoints
+---
+
+## 🌐 API Endpoints
 
 ### Public Routes
 - `GET /` - Main website
@@ -69,13 +105,13 @@ Visit: http://localhost:5000
 - `GET /payment` - Payment page
 - `GET /api/places` - Get tourist places
 
-### Booking Services
+### Booking Services (with Razorpay integration)
 - `POST /api/book-guide` - Book a guide
 - `POST /api/book-transport` - Book transport
 - `POST /api/book-activity` - Book activities
 
 ### AI Chatbot
-- `POST /api/chat` - AI chatbot responses
+- `POST /api/chat` - Chatbot responses
 
 ### Admin Panel
 - `GET /admin` - Admin dashboard
@@ -84,9 +120,7 @@ Visit: http://localhost:5000
 - `GET /api/admin/activity-bookings` - Get activity bookings
 - `GET /api/admin/stats` - Get admin statistics
 
-## Features Working Without Supabase
+---
 
-The website works even without Supabase setup by utilizing fallback functionality:
-- Static places data is shown
-- Booking forms show success messages
-- Chatbot provides basic built-in responses
+*© 2026 Jharkhand Eco & Cultural Tourism.*
+*Support: support@jharkhand-tourism.experiences | Ranchi, Jharkhand, India*
