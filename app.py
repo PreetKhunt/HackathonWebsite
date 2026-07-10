@@ -112,7 +112,18 @@ def book_guide():
     
     if supabase:
         try:
-            res = supabase.table('guide_bookings').insert(booking_data).execute()
+            mapped_data = {
+                'name': booking_data.get('name', 'Unknown'),
+                'email': booking_data.get('email') or (user.email if user else 'unknown@email.com'),
+                'phone': booking_data.get('phone', '0000000000'),
+                'places': ', '.join(booking_data.get('place', [])),
+                'date': booking_data.get('date'),
+                'duration': 1,
+                'group_size': 1,
+                'special_requirements': f"Language: {booking_data.get('lang', '')}",
+                'user_id': user.id
+            }
+            res = supabase.table('guide_bookings').insert(mapped_data).execute()
         except Exception as e:
             print(f'Error saving guide booking: {e}')
     return jsonify({'success': True, 'message': 'Guide booking submitted'})
@@ -146,7 +157,19 @@ def book_transport():
 
     if supabase:
         try:
-            res = supabase.table('transport_bookings').insert(booking_data).execute()
+            mapped_data = {
+                'name': booking_data.get('name', 'Unknown'),
+                'email': user.email if user else 'unknown@email.com',
+                'phone': '0000000000',
+                'pickup_location': booking_data.get('from', 'Unknown'),
+                'destination': booking_data.get('to', 'Unknown'),
+                'date': booking_data.get('when'),
+                'time': '10:00:00',
+                'passengers': 1,
+                'vehicle_type': booking_data.get('vehicle', 'Sedan'),
+                'user_id': user.id
+            }
+            res = supabase.table('transport_bookings').insert(mapped_data).execute()
         except Exception as e:
             print(f'Error saving transport booking: {e}')
     return jsonify({'success': True, 'message': 'Transport booking submitted'})
@@ -173,7 +196,18 @@ def book_activity():
 
     if supabase:
         try:
-            res = supabase.table('activity_bookings').insert(booking_data).execute()
+            mapped_data = {
+                'name': booking_data.get('name', 'Unknown'),
+                'phone': booking_data.get('phone', '0000000000'),
+                'email': booking_data.get('email') or (user.email if user else 'unknown@email.com'),
+                'activity': booking_data.get('activity', 'General'),
+                'location': booking_data.get('location', 'Unknown'),
+                'participants': int(booking_data.get('participants') or 1),
+                'date': booking_data.get('date'),
+                'experience_level': booking_data.get('requirements', ''),
+                'user_id': user.id
+            }
+            res = supabase.table('activity_bookings').insert(mapped_data).execute()
         except Exception as e:
             print(f'Error saving activity booking: {e}')
     return jsonify({'success': True, 'message': 'Activity booking submitted'})
