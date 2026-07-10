@@ -1,0 +1,5 @@
+/admin /templates/admin.html 200
+/admin.html /templates/admin.html 200
+/login /templates/login.html 200
+/signup /templates/signup.html 200
+/payment /templates/payment.html 200
