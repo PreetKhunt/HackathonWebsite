@@ -120,11 +120,11 @@ def book_guide():
             'name': booking_data.get('name', 'Unknown'),
             'email': booking_data.get('email') or (user.email if user else 'unknown@email.com'),
             'phone': booking_data.get('phone', '0000000000'),
-            'places': ', '.join(booking_data.get('place', [])),
+            'places': booking_data.get('places', ''),
             'date': booking_data.get('date'),
             'duration': 1,
             'group_size': 1,
-            'special_requirements': f"Language: {booking_data.get('lang', '')}",
+            'special_requirements': f"Language: {data.get('lang', data.get('language', ''))}",
             'user_id': user.id
         }
         print(f"Mapped guide booking data: {mapped_data}")
@@ -170,13 +170,13 @@ def book_transport():
         mapped_data = {
             'name': booking_data.get('name', 'Unknown'),
             'email': user.email if user else 'unknown@email.com',
-            'phone': '0000000000',
-            'pickup_location': booking_data.get('from', 'Unknown'),
-            'destination': booking_data.get('to', 'Unknown'),
-            'date': booking_data.get('when'),
-            'time': '10:00:00',
+            'phone': data.get('phone', booking_data.get('phone', '0000000000')),
+            'pickup_location': booking_data.get('pickup_location', data.get('from', 'Unknown')),
+            'destination': booking_data.get('destination', data.get('to', 'Unknown')),
+            'date': d_date,
+            'time': d_time,
             'passengers': 1,
-            'vehicle_type': booking_data.get('vehicle', 'Sedan'),
+            'vehicle_type': booking_data.get('vehicle_type', data.get('vehicle', 'Sedan')),
             'user_id': user.id
         }
         print(f"Mapped transport booking data: {mapped_data}")

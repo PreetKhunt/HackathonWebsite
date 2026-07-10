@@ -721,7 +721,9 @@
 
   <script>
     // API Base URL
-    const API_BASE = (typeof window.API_BASE !== 'undefined') ? window.API_BASE : '/api';
+    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://127.0.0.1:5000/api'
+      : 'https://jharkhand-tourism-backend-denu.onrender.com/api';
 
     // -------- Featured Places ----------
     async function loadPlaces() {
@@ -841,21 +843,21 @@
         document.getElementById('gMsg').textContent = result.message;
         document.getElementById('gMsg').style.color = result.success ? "#9fe29f" : "#ffaaaa";
       } catch (error) {
-        document.getElementById('gMsg').textContent = "Booking submitted! We'll confirm availability shortly.";
-        document.getElementById('gMsg').style.color = "#9fe29f";
+        document.getElementById('gMsg').textContent = "Network error. Please check connection.";
+        document.getElementById('gMsg').style.color = "#ffaaaa";
       }
     }
 
     async function bookTransport(){
       const data = {
         name: document.getElementById('tName').value.trim(),
-        pickup_location: document.getElementById('tFrom').value.trim(),
-        destination: document.getElementById('tTo').value.trim(),
-        vehicle_type: document.getElementById('tVehicle').value,
-        datetime: document.getElementById('tDate').value
+        from: document.getElementById('tFrom').value.trim(),
+        to: document.getElementById('tTo').value.trim(),
+        vehicle: document.getElementById('tVehicle').value,
+        when: document.getElementById('tDate').value
       };
       
-      if(!data.name || !data.pickup_location || !data.destination || !data.datetime){ 
+      if(!data.name || !data.from || !data.to || !data.when){ 
         document.getElementById('tMsg').textContent="Please complete all fields."; 
         document.getElementById('tMsg').style.color="#ffaaaa"; 
         return; 
@@ -872,8 +874,8 @@
         document.getElementById('tMsg').textContent = result.message;
         document.getElementById('tMsg').style.color = result.success ? "#9fe29f" : "#ffaaaa";
       } catch (error) {
-        document.getElementById('tMsg').textContent = "Transport request received! You'll get driver details after assignment.";
-        document.getElementById('tMsg').style.color = "#9fe29f";
+        document.getElementById('tMsg').textContent = "Network error. Please check connection.";
+        document.getElementById('tMsg').style.color = "#ffaaaa";
       }
     }
     
@@ -919,8 +921,8 @@
           document.getElementById('aRequirements').value = '';
         }
       } catch (error) {
-        document.getElementById('aMsg').textContent = "Activity booking request submitted! We'll confirm within 24 hours.";
-        document.getElementById('aMsg').style.color = "#9fe29f";
+        document.getElementById('aMsg').textContent = "Network error. Please check connection.";
+        document.getElementById('aMsg').style.color = "#ffaaaa";
       }
     }
 
