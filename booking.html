@@ -64,7 +64,7 @@
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/auth.js"></script>
+  <script src="auth.js"></script>
 </head>
 <body>
   <header class="nav">
@@ -191,8 +191,15 @@
     document.getElementById('summary-duration').textContent = duration;
     document.getElementById('btn-price').textContent = amount;
 
-    function handleFormSubmit(e) {
+    async function handleFormSubmit(e) {
         e.preventDefault(); // Prevent standard form submission
+        
+        const session = await getSession();
+        if (!session) {
+            sessionStorage.setItem('redirectAfterLogin', window.location.href);
+            window.location.href = 'templates/login.html';
+            return;
+        }
         
         const formDetails = {
             name: document.getElementById('bName').value,

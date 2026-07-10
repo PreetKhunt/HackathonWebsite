@@ -797,7 +797,13 @@
       arr.push({...payload, ts: new Date().toISOString()});
       localStorage.setItem(key, JSON.stringify(arr));
     }
-    function bookGuide(){
+    async function bookGuide(){
+      const session = await getSession();
+      if (!session) {
+        sessionStorage.setItem('redirectAfterLogin', window.location.href);
+        window.location.href = 'templates/login.html';
+        return;
+      }
       const gName = document.getElementById("gName");
       const gPhone = document.getElementById("gPhone");
       const gEmail = document.getElementById("gEmail");
@@ -835,7 +841,13 @@
             `Suggested day plan for ${data.place.slice(0,3).join(", ")}:\n• Morning: Meet guide, quick briefing.\n• Mid-day: Site visits & lunch at local eatery.\n• Evening: Sunset view & return.\n• Tips: Carry water, avoid litter, respect local customs.`;
       }
     }
-    function bookTransport(){
+    async function bookTransport(){
+      const session = await getSession();
+      if (!session) {
+        sessionStorage.setItem('redirectAfterLogin', window.location.href);
+        window.location.href = 'templates/login.html';
+        return;
+      }
       const tName = document.getElementById("tName");
       const tFrom = document.getElementById("tFrom");
       const tTo = document.getElementById("tTo");
@@ -913,7 +925,13 @@
     }
 
     // --------- Quick itinerary generator ----------
-    function makePlan(){
+    async function makePlan(){
+      const session = await getSession();
+      if (!session) {
+        sessionStorage.setItem('redirectAfterLogin', window.location.href);
+        window.location.href = 'templates/login.html';
+        return;
+      }
       const days = document.getElementById("days");
       const plan = document.getElementById("plan");
       const d = parseInt(days ? days.value : "1", 10);
@@ -975,7 +993,13 @@
     });
 
     // --------- Improved Chatbot ----------
-    function handleChat() {
+    async function handleChat() {
+      const session = await getSession();
+      if (!session) {
+        sessionStorage.setItem('redirectAfterLogin', window.location.href);
+        window.location.href = 'templates/login.html';
+        return;
+      }
       const box = document.getElementById('chatInput');
       const lang = document.getElementById('chatLang').value;
       const q = box.value.trim();

@@ -66,6 +66,7 @@ async function updateNavbar() {
                 <span>${name}</span>
             </div>
             <div class="dropdown-content" style="display:none;position:absolute;right:0;background:white;box-shadow:0 8px 16px rgba(0,0,0,0.1);min-width:160px;z-index:100;border-radius:4px;">
+                <div style="padding:12px;border-bottom:1px solid #eee;color:#666;font-size:0.9em;">${user.email}</div>
                 <a href="templates/profile.html" style="display:block;padding:12px;color:#333;text-decoration:none;">My Profile</a>
                 <a href="#" id="logoutBtn" style="display:block;padding:12px;color:#d32f2f;text-decoration:none;">Logout</a>
             </div>

@@ -112,9 +112,7 @@ def book_guide():
     
     if supabase:
         try:
-            print(f"Incoming request to /api/book-guide: {booking_data}")
             res = supabase.table('guide_bookings').insert(booking_data).execute()
-            print(f"Supabase insert result for guide_bookings: {res.data}")
         except Exception as e:
             print(f'Error saving guide booking: {e}')
     return jsonify({'success': True, 'message': 'Guide booking submitted'})
@@ -148,9 +146,7 @@ def book_transport():
 
     if supabase:
         try:
-            print(f"Incoming request to /api/book-transport: {booking_data}")
             res = supabase.table('transport_bookings').insert(booking_data).execute()
-            print(f"Supabase insert result for transport_bookings: {res.data}")
         except Exception as e:
             print(f'Error saving transport booking: {e}')
     return jsonify({'success': True, 'message': 'Transport booking submitted'})
@@ -177,9 +173,7 @@ def book_activity():
 
     if supabase:
         try:
-            print(f"Incoming request to /api/book-activity: {booking_data}")
             res = supabase.table('activity_bookings').insert(booking_data).execute()
-            print(f"Supabase insert result for activity_bookings: {res.data}")
         except Exception as e:
             print(f'Error saving activity booking: {e}')
     return jsonify({'success': True, 'message': 'Activity booking submitted'})
@@ -199,9 +193,7 @@ def book_package():
 
     if supabase:
         try:
-            print(f"Incoming request to /api/book-package: {data}")
             result = supabase.table('package_bookings').insert(data).execute()
-            print(f"Supabase insert result for package_bookings: {result.data}")
             return jsonify({'success': True, 'message': 'Package booking submitted successfully', 'id': result.data[0]['id'] if result.data else None})
         except Exception as e:
             print(f"Error saving to Supabase: {e}")
@@ -278,9 +270,7 @@ def admin_dashboard():
 def get_guide_bookings():
     if supabase:
         try:
-            print(f"Fetching fresh guide_bookings from Supabase...")
             result = supabase.table('guide_bookings').select('*').order('created_at', desc=True).execute()
-            print(f"Fetch guide_bookings result: {result.data}")
             return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"Error fetching guide bookings: {e}")
@@ -290,9 +280,7 @@ def get_guide_bookings():
 def get_transport_bookings():
     if supabase:
         try:
-            print(f"Fetching fresh transport_bookings from Supabase...")
             result = supabase.table('transport_bookings').select('*').order('created_at', desc=True).execute()
-            print(f"Fetch transport_bookings result: {result.data}")
             return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"Error fetching transport bookings: {e}")
@@ -302,9 +290,7 @@ def get_transport_bookings():
 def get_activity_bookings():
     if supabase:
         try:
-            print(f"Fetching fresh activity_bookings from Supabase...")
             result = supabase.table('activity_bookings').select('*').order('created_at', desc=True).execute()
-            print(f"Fetch activity_bookings result: {result.data}")
             return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"Error fetching activity bookings: {e}")
@@ -314,9 +300,7 @@ def get_activity_bookings():
 def get_package_bookings():
     if supabase:
         try:
-            print(f"Fetching fresh package_bookings from Supabase...")
             result = supabase.table('package_bookings').select('*').order('created_at', desc=True).execute()
-            print(f"Fetch package_bookings result: {result.data}")
             return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"Error fetching package bookings: {e}")
