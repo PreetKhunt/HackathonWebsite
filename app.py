@@ -1,4 +1,5 @@
 from flask import Flask, send_file, request, jsonify, render_template, make_response
+from flask_cors import CORS
 from functools import wraps
 import os
 from datetime import datetime
@@ -12,6 +13,7 @@ except ImportError:
     create_client = None
 
 app = Flask(__name__)
+CORS(app)
 app.config['SECRET_KEY'] = 'dev-secret-key'
 
 # Supabase configuration
