@@ -194,7 +194,7 @@
     async function handleFormSubmit(e) {
         e.preventDefault(); // Prevent standard form submission
         
-        const session = await getSession();
+        const session = (await window.supabaseClient.auth.getSession()).data.session;
         if (!session) {
             sessionStorage.setItem('redirectAfterLogin', window.location.href);
             window.location.href = 'templates/login.html';
@@ -234,12 +234,16 @@
                 btn.textContent = "Saving Booking...";
                 btn.disabled = true;
 
-                // Save to backend API
-                fetch(`${window.API_BASE}/book-package`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formDetails)
-                })
+                window.supabaseClient.auth.getSession().then(({ data: { session } }) => {
+                    const headers = { 'Content-Type': 'application/json' };
+                    if (session) {
+                        headers['Authorization'] = `Bearer ${session.access_token}`;
+                    }
+                    fetch(`${window.API_BASE}/book-package`, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(formDetails)
+                    })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
@@ -260,6 +264,7 @@
                     alert("Payment succeeded but saving failed. Please contact support with Payment ID: " + response.razorpay_payment_id + "\nError: " + err.message);
                     btn.textContent = "Pay Now ₹" + amount;
                     btn.disabled = false;
+                });
                 });
             },
             "prefill": {

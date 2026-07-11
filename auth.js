@@ -5,13 +5,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 window.supabaseClient = supabaseClient;
 
-// Helper to get current session
-async function getSession() {
-    const { data, error } = await supabaseClient.auth.getSession();
-    if (error) console.error("Error getting session:", error);
-    return data.session;
-}
-window.getSession = getSession;
 
 // Intercept fetch requests to add Authorization header automatically
 const originalFetch = window.fetch;
@@ -25,7 +18,7 @@ window.fetch = async function() {
     );
     
     if (isApiRequest) {
-        const session = await getSession();
+        const session = (await window.supabaseClient.auth.getSession()).data.session;
         if (session) {
             config = config || {};
             config.headers = config.headers || {};
@@ -37,7 +30,7 @@ window.fetch = async function() {
 
 // Check auth and redirect if not logged in (used on protected pages)
 async function requireAuth() {
-    const session = await getSession();
+    const session = (await window.supabaseClient.auth.getSession()).data.session;
     if (!session) {
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
         window.location.href = 'templates/login.html';
@@ -48,7 +41,7 @@ async function requireAuth() {
 
 // Update Navbar UI based on auth state
 async function updateNavbar() {
-    const session = await getSession();
+    const session = (await window.supabaseClient.auth.getSession()).data.session;
     console.log("Supabase Auth Session (updateNavbar):", session);
     const navLinks = document.querySelector('.nav-links');
     if (!navLinks) return;
@@ -114,7 +107,7 @@ async function updateNavbar() {
 // Function to handle booking button clicks
 async function handleBookingClick(e, bookingFunction) {
     e.preventDefault();
-    const session = await getSession();
+    const session = (await window.supabaseClient.auth.getSession()).data.session;
     if (!session) {
         // Save current scroll or context if needed, then redirect
         sessionStorage.setItem('redirectAfterLogin', window.location.href);

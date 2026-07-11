@@ -70,7 +70,7 @@
     <script>
         
         // Redirect if already logged in
-        getSession().then(session => {
+        window.supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (session) {
                 window.location.href = '../index.html';
             }

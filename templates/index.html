@@ -833,9 +833,14 @@
       }
       
       try {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
         const response = await fetch(`${API_BASE}/book-guide`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify(data)
         });
         
@@ -871,9 +876,14 @@
       }
       
       try {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
         const response = await fetch(`${API_BASE}/book-transport`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify(data)
         });
         
@@ -906,9 +916,14 @@
       }
       
       try {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
         const response = await fetch(`${API_BASE}/book-activity`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify(data)
         });
         

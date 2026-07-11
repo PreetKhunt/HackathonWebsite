@@ -793,7 +793,7 @@
 
     // -------- Guide & Transport ----------
     async function bookGuide(){
-      const session = await getSession();
+      const session = (await window.supabaseClient.auth.getSession()).data.session;
       if (!session) {
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
         window.location.href = 'templates/login.html';
@@ -821,9 +821,14 @@
           return; 
       }
       try {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
         const r = await fetch(`${window.API_BASE}/book-guide`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify(data)
         });
         const responseText = await r.text();
@@ -857,7 +862,7 @@
       }
     }
     async function bookTransport(){
-      const session = await getSession();
+      const session = (await window.supabaseClient.auth.getSession()).data.session;
       if (!session) {
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
         window.location.href = 'templates/login.html';
@@ -882,9 +887,14 @@
           return; 
       }
       try {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
         const r = await fetch(`${window.API_BASE}/book-transport`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify(data)
         });
         const res = await r.json();
@@ -908,7 +918,7 @@
     
     // -------- Activity Booking Function ----------
     async function bookActivity() {
-      const session = await getSession();
+      const session = (await window.supabaseClient.auth.getSession()).data.session;
       if (!session) {
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
         window.location.href = 'templates/login.html';
@@ -931,9 +941,14 @@
         return;
       }
       try {
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
         const r = await fetch(`${window.API_BASE}/book-activity`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify(data)
         });
         const res = await r.json();
@@ -968,7 +983,7 @@
 
     // --------- Quick itinerary generator ----------
     async function makePlan(){
-      const session = await getSession();
+      const session = (await window.supabaseClient.auth.getSession()).data.session;
       if (!session) {
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
         window.location.href = 'templates/login.html';
@@ -1036,7 +1051,7 @@
 
     // --------- Improved Chatbot ----------
     async function handleChat() {
-      const session = await getSession();
+      const session = (await window.supabaseClient.auth.getSession()).data.session;
       if (!session) {
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
         window.location.href = 'templates/login.html';

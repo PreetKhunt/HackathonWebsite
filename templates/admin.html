@@ -110,7 +110,7 @@
         };
 
         async function initAdmin() {
-            const session = await getSession();
+            const session = (await window.supabaseClient.auth.getSession()).data.session;
             if (!session || session.user.email !== 'admin@jharkhandtourism.com') {
                 document.body.innerHTML = '<h1 style="color:red;text-align:center;margin-top:50px;">Access Denied. Admins Only.</h1>';
                 return;
