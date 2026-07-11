@@ -136,6 +136,4 @@ window.addEventListener('load', async () => {
         console.error("OAuth callback/session error:", error);
     }
 });
-window.API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ? 'http://127.0.0.1:5000/api'
-  : 'https://jharkhand-tourism-backend.onrender.com/api';
+window.API_BASE = 'https://hackathonwebsite-7n3a.onrender.com/api';
