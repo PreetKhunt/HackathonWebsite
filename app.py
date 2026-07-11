@@ -19,25 +19,46 @@ app.config['SECRET_KEY'] = 'dev-secret-key'
 
 # Supabase configuration
 SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
+SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY')          # Used ONLY for JWT verification
+SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')  # Used for DB inserts (bypasses RLS)
 
 print(f"Backend SUPABASE_URL: {SUPABASE_URL}")
-print(f"Backend SUPABASE_KEY: {SUPABASE_KEY[:10] if SUPABASE_KEY else 'NOT SET'}...{SUPABASE_KEY[-10:] if SUPABASE_KEY and len(SUPABASE_KEY) > 20 else ''}")
+print(f"Backend ANON_KEY: {'SET (' + SUPABASE_ANON_KEY[:12] + '...)' if SUPABASE_ANON_KEY else 'NOT SET'}")
+print(f"Backend SERVICE_KEY: {'SET (' + SUPABASE_SERVICE_KEY[:12] + '...)' if SUPABASE_SERVICE_KEY else 'NOT SET - RLS inserts WILL FAIL'}")
 
 # Razorpay configuration
 RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
 RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
 
-# Initialize Supabase client
-supabase = None
-if create_client and SUPABASE_URL and SUPABASE_KEY:
-    try:
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        print("Connected to Supabase successfully")
-    except Exception as e:
-        print(f"Supabase connection failed: {e}")
+# -------------------------------------------------------
+# supabase_auth  : anon key  - used to verify user JWTs
+# supabase_admin : service   - used for all DB operations
+#   (service role bypasses RLS; auth is enforced by our
+#    own require_auth decorator, NOT by RLS)
+# -------------------------------------------------------
+supabase_auth = None    # JWT verification client
+supabase_admin = None   # DB writes client (service role)
+
+if create_client and SUPABASE_URL:
+    if SUPABASE_ANON_KEY:
+        try:
+            supabase_auth = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+            print("Auth client (anon key): connected")
+        except Exception as e:
+            print(f"Auth client failed: {e}")
+    if SUPABASE_SERVICE_KEY:
+        try:
+            supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+            print("Admin client (service role): connected")
+        except Exception as e:
+            print(f"Admin client failed: {e}")
+    else:
+        print("WARNING: SUPABASE_SERVICE_ROLE_KEY not set. DB inserts will fail RLS check.")
 else:
-    print("Supabase not configured - check SUPABASE_URL and SUPABASE_ANON_KEY env vars")
+    print("Supabase not configured - check env vars")
+
+# Backwards-compat alias so /api/places and admin routes keep working
+supabase = supabase_admin or supabase_auth
 
 
 # ============================================================
@@ -47,69 +68,61 @@ else:
 def get_current_user():
     """
     Verify the Bearer token in the Authorization header against Supabase Auth.
+    Uses the ANON KEY client (supabase_auth) to call get_user(jwt=token).
     Result is cached in flask.g so it is only called once per request.
     Returns the Supabase User object, or None if verification fails.
     """
-    # Cache result so we never call Supabase Auth twice per request
     if hasattr(g, '_cached_user'):
         return g._cached_user
 
     auth_header = request.headers.get('Authorization', '')
-    print(f"[AUTH] Incoming Authorization header: '{auth_header[:30]}...' (length={len(auth_header)})")
+    print(f"[AUTH] Authorization header length: {len(auth_header)}")
 
     if not auth_header:
-        print("[AUTH] FAIL: No Authorization header present")
+        print("[AUTH] FAIL: No Authorization header")
         g._cached_user = None
         return None
 
     if not auth_header.startswith('Bearer '):
-        print(f"[AUTH] FAIL: Header does not start with 'Bearer '. Got: '{auth_header[:20]}'")
+        print(f"[AUTH] FAIL: Does not start with 'Bearer '. Got: '{auth_header[:20]}'")
         g._cached_user = None
         return None
 
-    token = auth_header[7:].strip()   # Safely strip 'Bearer '
+    token = auth_header[7:].strip()
 
     if not token:
-        print("[AUTH] FAIL: Token is empty after stripping 'Bearer '")
+        print("[AUTH] FAIL: Empty token after stripping 'Bearer '")
         g._cached_user = None
         return None
 
-    print(f"[AUTH] Token extracted (length={len(token)}): {token[:12]}...{token[-8:]}")
-
-    # Validate looks like a JWT (3 dot-separated segments)
     segments = token.split('.')
     if len(segments) != 3:
-        print(f"[AUTH] FAIL: Token has {len(segments)} segments, expected 3. Not a valid JWT.")
+        print(f"[AUTH] FAIL: Token has {len(segments)} segments (need 3). Not a valid JWT.")
         g._cached_user = None
         return None
 
-    if not supabase:
-        print("[AUTH] FAIL: Supabase client not initialized (check env vars)")
+    print(f"[AUTH] Token OK (len={len(token)}): {token[:12]}...{token[-8:]}")
+
+    # Use the ANON key client specifically for JWT verification
+    auth_client = supabase_auth or supabase_admin
+    if not auth_client:
+        print("[AUTH] FAIL: No Supabase client available")
         g._cached_user = None
         return None
 
     try:
-        print("[AUTH] Calling supabase.auth.get_user(jwt=token)...")
-        res = supabase.auth.get_user(jwt=token)
-
-        if res is None:
-            print("[AUTH] FAIL: supabase.auth.get_user() returned None")
-            g._cached_user = None
-            return None
-
+        print("[AUTH] Calling supabase_auth.get_user(jwt=token)...")
+        res = auth_client.auth.get_user(jwt=token)
         user = getattr(res, 'user', None)
-
         if user is None:
-            print(f"[AUTH] FAIL: res.user is None. Full response: {res}")
+            print(f"[AUTH] FAIL: res.user is None. Full res: {res}")
             g._cached_user = None
             return None
-
-        print(f"[AUTH] SUCCESS: user.id={user.id}, user.email={user.email}")
+        print(f"[AUTH] SUCCESS: user.id={user.id} user.email={user.email}")
         g._cached_user = user
         return user
-
     except Exception as e:
-        print(f"[AUTH] FAIL: Supabase auth verification raised exception: {type(e).__name__}: {e}")
+        print(f"[AUTH] FAIL: {type(e).__name__}: {e}")
         g._cached_user = None
         return None
 
@@ -198,14 +211,14 @@ def book_guide():
         'special_requirements': f"Language: {data.get('lang', data.get('language', ''))}",
     }
 
-    print(f"[GUIDE] Inserting: {json.dumps(mapped_data, default=str)}")
+    print(f"[GUIDE] user_id={str(user.id)} | payload={json.dumps(mapped_data, default=str)}")
 
-    if not supabase:
-        return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+    if not supabase_admin:
+        return jsonify({'success': False, 'error': 'Service role client not initialized (check SUPABASE_SERVICE_ROLE_KEY env var)'}), 500
 
     try:
-        res = supabase.table('guide_bookings').insert(mapped_data).execute()
-        print(f"[GUIDE] Insert response: {res.data}")
+        res = supabase_admin.table('guide_bookings').insert(mapped_data).execute()
+        print(f"[GUIDE] Insert OK: {res.data}")
         return jsonify({'success': True, 'message': 'Guide booking submitted successfully'})
     except Exception as e:
         print(f"[GUIDE] Insert FAILED: {type(e).__name__}: {e}")
@@ -238,14 +251,14 @@ def book_transport():
         'vehicle_type': data.get('vehicle', 'Sedan'),
     }
 
-    print(f"[TRANSPORT] Inserting: {json.dumps(mapped_data, default=str)}")
+    print(f"[TRANSPORT] user_id={str(user.id)} | payload={json.dumps(mapped_data, default=str)}")
 
-    if not supabase:
-        return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+    if not supabase_admin:
+        return jsonify({'success': False, 'error': 'Service role client not initialized'}), 500
 
     try:
-        res = supabase.table('transport_bookings').insert(mapped_data).execute()
-        print(f"[TRANSPORT] Insert response: {res.data}")
+        res = supabase_admin.table('transport_bookings').insert(mapped_data).execute()
+        print(f"[TRANSPORT] Insert OK: {res.data}")
         return jsonify({'success': True, 'message': 'Transport booking submitted successfully'})
     except Exception as e:
         print(f"[TRANSPORT] Insert FAILED: {type(e).__name__}: {e}")
@@ -270,14 +283,14 @@ def book_activity():
         'experience_level': data.get('requirements', ''),
     }
 
-    print(f"[ACTIVITY] Inserting: {json.dumps(mapped_data, default=str)}")
+    print(f"[ACTIVITY] user_id={str(user.id)} | payload={json.dumps(mapped_data, default=str)}")
 
-    if not supabase:
-        return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+    if not supabase_admin:
+        return jsonify({'success': False, 'error': 'Service role client not initialized'}), 500
 
     try:
-        res = supabase.table('activity_bookings').insert(mapped_data).execute()
-        print(f"[ACTIVITY] Insert response: {res.data}")
+        res = supabase_admin.table('activity_bookings').insert(mapped_data).execute()
+        print(f"[ACTIVITY] Insert OK: {res.data}")
         return jsonify({'success': True, 'message': 'Activity booking submitted successfully'})
     except Exception as e:
         print(f"[ACTIVITY] Insert FAILED: {type(e).__name__}: {e}")
@@ -313,14 +326,14 @@ def book_package():
         'special_requests': data.get('special_requests', ''),
     }
 
-    print(f"[PACKAGE] Inserting: {json.dumps(mapped_data, default=str)}")
+    print(f"[PACKAGE] user_id={str(user.id)} | payload={json.dumps(mapped_data, default=str)}")
 
-    if not supabase:
-        return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+    if not supabase_admin:
+        return jsonify({'success': False, 'error': 'Service role client not initialized'}), 500
 
     try:
-        result = supabase.table('package_bookings').insert(mapped_data).execute()
-        print(f"[PACKAGE] Insert response: {result.data}")
+        result = supabase_admin.table('package_bookings').insert(mapped_data).execute()
+        print(f"[PACKAGE] Insert OK: {result.data}")
         booking_id = result.data[0]['id'] if result.data else None
         return jsonify({'success': True, 'message': 'Package booking submitted successfully', 'id': booking_id})
     except Exception as e:
