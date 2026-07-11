@@ -36,7 +36,7 @@ else:
 
 # Fallback data
 FALLBACK_PLACES = [
-    {"name":"Dassam Falls","tag":"Waterfall","image_url":"https://images.unsplash.com/photo-1620857312151-54a7c180902c?w=900&h=500&fit=crop","description":"A spectacular cascade on the Kanchi River surrounded by sal forests."},
+    {"name":"Dassam Falls","tag":"Waterfall","image_url":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Dassam_falls.jpg/960px-Dassam_falls.jpg","description":"A spectacular cascade on the Kanchi River surrounded by sal forests."},
     {"name":"Hundru Falls","tag":"Waterfall","image_url":"https://thumbs.dreamstime.com/b/hundru-waterfalls-jharkhand-287522583.jpg","description":"Monsoon-favorite plunge pool and scenic rock formations."},
     {"name":"Betla National Park","tag":"Wildlife","image_url":"https://superbcollections.com/wp-content/uploads/2023/08/Betla-National-Park.jpeg","description":"Forests, elephants, and the ruins of Palamu Fort—Jharkhand's classic safari."},
     {"name":"Netarhat","tag":"Hill Station","image_url":"https://thumbs.dreamstime.com/b/netarhat-jharkhand-indian-view-pictures-taken-vishal-singh-170710563.jpg","description":"'Queen of Chotanagpur'—famed for sunrise/sunset points and pine avenues."}
