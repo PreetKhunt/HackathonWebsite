@@ -831,7 +831,13 @@
           headers: headers,
           body: JSON.stringify(data)
         });
-        const res = await r.json();
+        const responseText = await r.text();
+        let res;
+        try {
+            res = JSON.parse(responseText);
+        } catch (parseError) {
+            throw new Error("Backend returned non-JSON response: " + responseText.substring(0, 100));
+        }
         if (gMsg) {
           if (r.ok && res.success) {
             gMsg.textContent = res.message;
@@ -843,14 +849,14 @@
                 <p>Suggested day plan for ${data.place.slice(0,3).join(", ")}:\n• Morning: Meet guide, quick briefing.\n• Mid-day: Site visits & lunch at local eatery.\n• Evening: Sunset view & return.\n• Tips: Carry water, avoid litter, respect local customs.</p>`;
             }
           } else {
-            gMsg.textContent = res.error || "Failed to submit request.";
+            gMsg.textContent = res.error || res.message || "Failed to submit request.";
             gMsg.style.color = "#ffaaaa";
           }
         }
       } catch (e) {
-        console.error(e);
+        console.error("bookGuide error:", e);
         if (gMsg) {
-          gMsg.textContent = "Network error occurred.";
+          gMsg.textContent = "Error: " + (e.message || "Network error occurred.");
           gMsg.style.color = "#ffaaaa";
         }
       }

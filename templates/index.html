@@ -842,11 +842,18 @@
           body: JSON.stringify(data)
         });
         
-        const result = await response.json();
-        document.getElementById('gMsg').textContent = result.message;
+        const responseText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            throw new Error("Backend returned non-JSON response: " + responseText.substring(0, 100));
+        }
+        document.getElementById('gMsg').textContent = result.message || result.error || "Failed to submit request.";
         document.getElementById('gMsg').style.color = result.success ? "#9fe29f" : "#ffaaaa";
       } catch (error) {
-        document.getElementById('gMsg').textContent = "Network error. Please check connection.";
+        console.error("bookGuide error:", error);
+        document.getElementById('gMsg').textContent = "Error: " + (error.message || "Network error. Please check connection.");
         document.getElementById('gMsg').style.color = "#ffaaaa";
       }
     }
