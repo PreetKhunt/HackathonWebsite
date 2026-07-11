@@ -43,7 +43,7 @@ async function requireAuth() {
 async function updateNavbar() {
     const session = (await window.supabaseClient.auth.getSession()).data.session;
     console.log("Supabase Auth Session (updateNavbar):", session);
-    const navLinks = document.querySelector('.nav-links');
+    const navLinks = document.querySelector('.menu');
     if (!navLinks) return;
     
     // Remove existing auth links to replace them
@@ -68,7 +68,7 @@ async function updateNavbar() {
             </div>
             <div class="dropdown-content" style="display:none;position:absolute;right:0;background:white;box-shadow:0 8px 16px rgba(0,0,0,0.1);min-width:160px;z-index:100;border-radius:4px;">
                 <div style="padding:12px;border-bottom:1px solid #eee;color:#666;font-size:0.9em;">${user.email}</div>
-                <a href="templates/profile.html" style="display:block;padding:12px;color:#333;text-decoration:none;">My Profile</a>
+                <a href="/profile" style="display:block;padding:12px;color:#333;text-decoration:none;">My Profile</a>
                 <a href="#" id="logoutBtn" style="display:block;padding:12px;color:#d32f2f;text-decoration:none;">Logout</a>
             </div>
         `;
@@ -81,7 +81,7 @@ async function updateNavbar() {
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
             await supabaseClient.auth.signOut();
-            window.location.href = 'index.html';
+            window.location.href = '/';
         });
     } else {
         const loginLink = document.createElement('a');
@@ -92,7 +92,7 @@ async function updateNavbar() {
         
         const signupLink = document.createElement('a');
         signupLink.className = 'auth-nav-item';
-        signupLink.href = 'templates/signup.html';
+        signupLink.href = '/signup';
         signupLink.textContent = 'Sign Up';
         signupLink.style.padding = '8px 16px';
         signupLink.style.background = '#667eea';
