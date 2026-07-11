@@ -237,11 +237,16 @@
                 btn.disabled = true;
 
                 // Save to backend API
-                fetch(`${window.API_BASE}/book-package`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formDetails)
-                })
+                getSession().then(session => {
+                    const headers = { 'Content-Type': 'application/json' };
+                    if (session) {
+                        headers['Authorization'] = `Bearer ${session.access_token}`;
+                    }
+                    fetch(`${window.API_BASE}/book-package`, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(formDetails)
+                    })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
@@ -264,6 +269,7 @@
                     alert("Payment succeeded but saving failed. Please contact support with Payment ID: " + response.razorpay_payment_id);
                     btn.textContent = "Pay Now ₹" + amount;
                     btn.disabled = false;
+                });
                 });
             },
             "prefill": {

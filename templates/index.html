@@ -831,9 +831,14 @@
       }
       
       try {
+        const session = await getSession();
+        const headers = {'Content-Type': 'application/json'};
+        if (session) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
         const response = await fetch(`${API_BASE}/book-guide`, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: headers,
           body: JSON.stringify(data)
         });
         
@@ -862,9 +867,14 @@
       }
       
       try {
+        const sessionRes = await getSession();
+        const headers = {'Content-Type': 'application/json'};
+        if (sessionRes) {
+            headers['Authorization'] = `Bearer ${sessionRes.access_token}`;
+        }
         const response = await fetch(`${API_BASE}/book-transport`, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: headers,
           body: JSON.stringify(data)
         });
         
@@ -897,9 +907,14 @@
       }
       
       try {
+        const sessionAct = await getSession();
+        const headers = {'Content-Type': 'application/json'};
+        if (sessionAct) {
+            headers['Authorization'] = `Bearer ${sessionAct.access_token}`;
+        }
         const response = await fetch(`${API_BASE}/book-activity`, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: headers,
           body: JSON.stringify(data)
         });
         
