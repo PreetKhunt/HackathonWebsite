@@ -29,7 +29,7 @@
     .menu{display:flex;gap:1rem;font-size:.95rem}
     .menu a{opacity:.9;padding:.4rem .7rem;border-radius:10px}
     .menu a:hover{background:#1b2130}
-    .btn{display:inline-block;background:linear-gradient(135deg,var(--pri),var(--pri-2));color:#0b0e13;padding:.7rem 1rem;border:none;border-radius:12px;font-weight:700;cursor:pointer}
+.btn{display:inline-block;background:linear-gradient(135deg,var(--pri),var(--pri-2));color:#0b0e13;padding:.7rem 1rem;border:none;border-radius:12px;font-weight:700;cursor:pointer;text-decoration:none}
     .btn-outline{background:transparent;border:1px solid #2b3446;color:#e7ecf3}
     .hero{
       min-height:64vh;display:grid;place-items:center;text-align:center;padding:5rem 0;background:
@@ -157,9 +157,6 @@
       flex: 1;
     }
   </style>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="auth.js"></script>
 </head>
 <body>
   <header class="nav">
@@ -179,6 +176,7 @@
         <a href="#book">Guide & Transport</a>
         <a href="#activity-booking">Activity Booking</a>
         <a href="#mapbox">Map</a>
+
       </nav>
       <a class="btn btn-outline" href="#chat">Chatbot</a>
     </div>
@@ -539,7 +537,7 @@
               <li>Train Included</li>
             </ul>
             <div class="inline-form" style="margin-top:1rem">
-              <a href="booking.html?package=Budget&price=6999&duration=3D/2N" class="btn">Book Budget</a>
+              <a href="/payment?package=budget&amount=6999" class="btn" style="display:inline-block;text-decoration:none;">Book Budget</a>
               <span class="badge">Small groups (max 3)
                 Free cancellation (48h)</span>
             </div>
@@ -563,7 +561,7 @@
               <li>Any One Activity Included</li>
             </ul>
             <div class="inline-form" style="margin-top:1rem">
-              <a href="booking.html?package=Deluxe&price=14990&duration=5D/4N" class="btn">Book Medium</a>
+              <a href="/payment?package=deluxe&amount=14990" class="btn" style="display:inline-block;text-decoration:none;">Book Medium</a>
               <span class="badge">Small groups (max 5)
                 Free cancellation (24h)
               </span>
@@ -588,7 +586,7 @@
               <li>Activities Included</li>
             </ul>
             <div class="inline-form" style="margin-top:1rem">
-              <a href="booking.html?package=Premium&price=26900&duration=7D/6N" class="btn">Book Premium</a>
+              <a href="/payment?package=premium&amount=26900" class="btn" style="display:inline-block;text-decoration:none;">Book Premium</a>
               <span class="badge">Small groups (max 8)
                 Apply 25% cancellation fee
               </span>
@@ -630,7 +628,7 @@
                 </select>
               </label>
               <label>Date <input id="gDate" type="date"></label>
-              <button class="btn" onclick="bookGuide()">Request Guide</button>
+              <button class="btn" onclick="bookGuide()" type="button">Request Guide</button>
               <p id="gMsg" class="notice"></p>
             </div>
           </div>
@@ -653,7 +651,7 @@
                 </select>
               </label>
               <label>Date & Time <input id="tDate" type="datetime-local"></label>
-              <button class="btn" onclick="bookTransport()">Request Transport</button>
+              <button class="btn" onclick="bookTransport()" type="button">Request Transport</button>
               <p id="tMsg" class="notice"></p>
             </div>
           </div>
@@ -684,15 +682,15 @@
     </div>
   </section>
 
-  <!-- Chatbot (Fixed version) -->
+  <!-- Chatbot -->
   <section id="chat">
     <div class="container">
       <div class="card">
         <div class="pad">
           <h3>Multilingual Chat Assistant</h3>
-          <p class="muted">Ask about travel times, weather, and permits. (In production, connect to an AI backend.)</p>
+          <p class="muted">Ask about travel times, weather, and permits.</p>
           <div class="inline-form">
-            <select id="chatLang"><option>English</option><option>Hindi</option><option>Bangla</option></select>
+            <select id="chatLang"><option>English</option><option>Hindi</option><option>Bangla</option><option>Tamil</option><option>Gujarati</option><option>Khortha</option></select>
             <input id="chatInput" placeholder="Type your question…" onkeypress="if(event.key==='Enter') handleChat()" />
             <button class="btn" onclick="handleChat()">Send</button>
           </div>
@@ -716,198 +714,209 @@
       <div>
         <div class="kicker">Contact</div>
         <p class="notice">support@jharkhand-tourism.experiences · +91 9313343179</p>
-        <p class="notice">Ranchi, Jharkhand, India | <a href="templates/admin.html" style="color:inherit;text-decoration:underline">Admin Panel</a></p>
+        <p class="notice">Ranchi, Jharkhand, India</p>
       </div>
     </div>
   </footer>
 
   <script>
-    // -------- Featured Places (images via topic-based Unsplash placeholders) ----------
-    const PLACES = [
-      {
-        name:"Dassam Falls (Ranchi)",
-        tag:"Waterfall",
-        img:"https://dynamic-media-cdn.tripadvisor.com/media/photo-o/19/fa/bd/6e/a-full-view-of-the-falls.jpg?w=900&h=500&s=1",
-        blurb:"A spectacular cascade on the Kanchi River surrounded by sal forests."
-      },
-      {
-        name:"Hundru Falls (Ranchi)",
-        tag:"Waterfall",
-        img:"https://thumbs.dreamstime.com/b/hundru-waterfalls-jharkhand-287522583.jpg",
-        blurb:"Monsoon-favorite plunge pool and scenic rock formations."
-      },
-      {
-        name:"Betla National Park (Palamu)",
-        tag:"Wildlife",
-        img:"https://superbcollections.com/wp-content/uploads/2023/08/Betla-National-Park.jpeg",
-        blurb:"Forests, elephants, and the ruins of Palamu Fort—Jharkhand's classic safari."
-      },
-      {
-        name:"Netarhat",
-        tag:"Hill Station",
-        img:"https://thumbs.dreamstime.com/b/netarhat-jharkhand-indian-view-pictures-taken-vishal-singh-170710563.jpg",
-        blurb:"'Queen of Chotanagpur'—famed for sunrise/sunset points and pine avenues."
-      },
-      {
-        name:"Patratu Valley",
-        tag:"Scenic Drive",
-        img:"https://media-cdn.tripadvisor.com/media/photo-s/0e/5e/c0/46/drone-shot-of-the-valley.jpg",
-        blurb:"Winding roads, emerald hills, and the shimmering Patratu Lake."
-      },
-      {
-        name:"Baidyanath Temple (Deoghar)",
-        tag:"Pilgrimage",
-        img:"https://cdn1.prayagsamagam.com/media/2023/01/25183337/Baidyanath-Dham-1-1024x576.webp",
-        blurb:"One of the 12 Jyotirlingas—vibrant religious hub with old-world charm."
-      },
-      {
-        name:"Parasnath Hill (Shikharji)",
-        tag:"Trek",
-        img:"https://dynamic-media-cdn.tripadvisor.com/media/photo-o/09/6c/f6/c8/parasnath-hills.jpg?w=1200&h=-1&s=1",
-        blurb:"Important Jain pilgrimage; rewarding hikes and misty viewpoints."
-      },
-      {
-        name:"Ranchi Lake & Rock Garden",
-        tag:"City",
-        img:"https://dynamic-media-cdn.tripadvisor.com/media/photo-o/18/3d/c0/dd/rock-garden.jpg?w=900&h=500&s=1",
-        blurb:"Relaxing lakeside vibes and sculpted gardens within the city."
-      },
-      {
-        name:"Tribal Handicrafts",
-        tag:"Marketplace",
-        img:"https://zineart.in/images/DOK/DOK006011.webp",
-        blurb:"Local artisans, dokra metal craft, bamboo works—shop responsibly."
-      }
-    ];
-    const grid = document.getElementById('placeGrid');
-    grid.innerHTML = PLACES.map(p => `
-      <article class="card">
-        <img class="media" src="${p.img}" alt="${p.name}">
-        <div class="pad">
-          <span class="chip">${p.tag}</span>
-          <h3 style="margin:.4rem 0 .3rem">${p.name}</h3>
-          <p class="muted">${p.blurb}</p>
-        </div>
-      </article>
-    `).join('');
+    // API Base URL removed
 
-    // -------- Guide & Transport ----------
-    async function bookGuide(){
-      const session = await getSession();
-      if (!session) {
-        sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
-        return;
-      }
-      const gName = document.getElementById("gName");
-      const gPhone = document.getElementById("gPhone");
-      const gEmail = document.getElementById("gEmail");
-      const gLang = document.getElementById("gLang");
-      const gPlace = document.getElementById("gPlace");
-      const gDate = document.getElementById("gDate");
-      const gMsg = document.getElementById("gMsg");
-      const plan = document.getElementById("plan");
-
-      const data = {
-        name: gName ? gName.value.trim() : '',
-        phone: gPhone ? gPhone.value.trim() : '',
-        email: gEmail ? gEmail.value.trim() : '',
-        lang: gLang ? gLang.value : '',
-        place: gPlace ? Array.from(gPlace.selectedOptions).map(o=>o.value) : [],
-        date: gDate ? gDate.value : ''
-      };
-      if(!data.name || !data.phone || !data.date){ 
-          if(gMsg) { gMsg.textContent = "Please fill name, phone and date."; gMsg.style.color = "#ffaaaa"; }
-          return; 
-      }
+    // -------- Featured Places ----------
+    async function loadPlaces() {
       try {
-        const r = await fetch(`${window.API_BASE}/book-guide`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(data)
-        });
-        const res = await r.json();
-        if (gMsg) {
-          if (r.ok && res.success) {
-            gMsg.textContent = res.message;
-            gMsg.style.color = "#9fe29f";
-            
-            // simple itinerary kick
-            if(data.place && data.place.length > 0 && plan) {
-              plan.innerHTML = `<h4>AI Suggestion</h4>
-                <p>Suggested day plan for ${data.place.slice(0,3).join(", ")}:\n• Morning: Meet guide, quick briefing.\n• Mid-day: Site visits & lunch at local eatery.\n• Evening: Sunset view & return.\n• Tips: Carry water, avoid litter, respect local customs.</p>`;
-            }
-          } else {
-            gMsg.textContent = res.error || "Failed to submit request.";
-            gMsg.style.color = "#ffaaaa";
+        const { data: places, error } = await window.supabaseClient.from('places').select('*');
+        if (error || !places || places.length === 0) throw error || new Error('No places found');
+        
+        const grid = document.getElementById('placeGrid');
+        grid.innerHTML = places.map(p => `
+          <article class="card">
+            <img class="media" src="${p.image_url}" alt="${p.name}">
+            <div class="pad">
+              <span class="chip">${p.tag}</span>
+              <h3 style="margin:.4rem 0 .3rem">${p.name}</h3>
+              <p class="muted">${p.description}</p>
+            </div>
+          </article>
+        `).join('');
+      } catch (error) {
+        // Fallback to static data if API fails
+        const PLACES = [
+          {
+            name:"Dassam Falls (Ranchi)",
+            tag:"Waterfall",
+            image_url:"https://dynamic-media-cdn.tripadvisor.com/media/photo-o/19/fa/bd/6e/a-full-view-of-the-falls.jpg?w=900&h=500&s=1",
+            description:"A spectacular cascade on the Kanchi River surrounded by sal forests."
+          },
+          {
+            name:"Hundru Falls (Ranchi)",
+            tag:"Waterfall",
+            image_url:"https://thumbs.dreamstime.com/b/hundru-waterfalls-jharkhand-287522583.jpg",
+            description:"Monsoon-favorite plunge pool and scenic rock formations."
+          },
+          {
+            name:"Betla National Park (Palamu)",
+            tag:"Wildlife",
+            image_url:"https://superbcollections.com/wp-content/uploads/2023/08/Betla-National-Park.jpeg",
+            description:"Forests, elephants, and the ruins of Palamu Fort—Jharkhand's classic safari."
+          },
+          {
+            name:"Netarhat",
+            tag:"Hill Station",
+            image_url:"https://thumbs.dreamstime.com/b/netarhat-jharkhand-indian-view-pictures-taken-vishal-singh-170710563.jpg",
+            description:"'Queen of Chotanagpur'—famed for sunrise/sunset points and pine avenues."
+          },
+          {
+            name:"Patratu Valley",
+            tag:"Scenic Drive",
+            image_url:"https://media-cdn.tripadvisor.com/media/photo-s/0e/5e/c0/46/drone-shot-of-the-valley.jpg",
+            description:"Winding roads, emerald hills, and the shimmering Patratu Lake."
+          },
+          {
+            name:"Baidyanath Temple (Deoghar)",
+            tag:"Pilgrimage",
+            image_url:"https://cdn1.prayagsamagam.com/media/2023/01/25183337/Baidyanath-Dham-1-1024x576.webp",
+            description:"One of the 12 Jyotirlingas—vibrant religious hub with old-world charm."
+          },
+          {
+            name:"Parasnath Hill (Shikharji)",
+            tag:"Trek",
+            image_url:"https://dynamic-media-cdn.tripadvisor.com/media/photo-o/09/6c/f6/c8/parasnath-hills.jpg?w=1200&h=-1&s=1",
+            description:"Important Jain pilgrimage; rewarding hikes and misty viewpoints."
+          },
+          {
+            name:"Ranchi Lake & Rock Garden",
+            tag:"City",
+            image_url:"https://dynamic-media-cdn.tripadvisor.com/media/photo-o/18/3d/c0/dd/rock-garden.jpg?w=900&h=500&s=1",
+            description:"Relaxing lakeside vibes and sculpted gardens within the city."
+          },
+          {
+            name:"Tribal Handicrafts",
+            tag:"Marketplace",
+            image_url:"https://zineart.in/images/DOK/DOK006011.webp",
+            description:"Local artisans, dokra metal craft, bamboo works—shop responsibly."
           }
-        }
-      } catch (e) {
-        console.error(e);
-        if (gMsg) {
-          gMsg.textContent = "Network error occurred.";
-          gMsg.style.color = "#ffaaaa";
-        }
+        ];
+        
+        const grid = document.getElementById('placeGrid');
+        grid.innerHTML = PLACES.map(p => `
+          <article class="card">
+            <img class="media" src="${p.image_url}" alt="${p.name}">
+            <div class="pad">
+              <span class="chip">${p.tag}</span>
+              <h3 style="margin:.4rem 0 .3rem">${p.name}</h3>
+              <p class="muted">${p.description}</p>
+            </div>
+          </article>
+        `).join('');
       }
     }
-    async function bookTransport(){
-      const session = await getSession();
-      if (!session) {
-        sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
-        return;
-      }
-      const tName = document.getElementById("tName");
-      const tFrom = document.getElementById("tFrom");
-      const tTo = document.getElementById("tTo");
-      const tVehicle = document.getElementById("tVehicle");
-      const tDate = document.getElementById("tDate");
-      const tMsg = document.getElementById("tMsg");
 
+    // -------- Guide & Transport Booking ----------
+    async function bookGuide(){
       const data = {
-        name: tName ? tName.value.trim() : '',
-        from: tFrom ? tFrom.value.trim() : '',
-        to: tTo ? tTo.value.trim() : '',
-        vehicle: tVehicle ? tVehicle.value : '',
-        when: tDate ? tDate.value : ''
+        name: document.getElementById('gName').value.trim(),
+        phone: document.getElementById('gPhone').value.trim(),
+        email: document.getElementById('gEmail').value.trim(),
+        language: document.getElementById('gLang').value,
+        places: Array.from(document.getElementById('gPlace').selectedOptions).map(o=>o.value),
+        date: document.getElementById('gDate').value
       };
-      if(!data.name || !data.from || !data.to || !data.when){ 
-          if(tMsg) { tMsg.textContent="Please complete all fields."; tMsg.style.color="#ffaaaa"; }
-          return; 
+      
+      if(!data.name || !data.phone || !data.date){ 
+        document.getElementById('gMsg').textContent = "Please fill name, phone and date."; 
+        document.getElementById('gMsg').style.color = "#ffaaaa"; 
+        return; 
       }
-      try {
-        const r = await fetch(`${window.API_BASE}/book-transport`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(data)
-        });
-        const res = await r.json();
-        if (tMsg) {
-          if (r.ok && res.success) {
-            tMsg.textContent = res.message;
-            tMsg.style.color = "#9fe29f";
-          } else {
-            tMsg.textContent = res.error || "Failed to submit request.";
-            tMsg.style.color = "#ffaaaa";
-          }
+      
+        const session = await getSession();
+        if (!session) {
+          sessionStorage.setItem('redirectAfterLogin', window.location.href);
+          window.location.href = 'templates/login.html';
+          return;
         }
-      } catch (e) {
-        console.error(e);
-        if (tMsg) {
-          tMsg.textContent = "Network error occurred.";
-          tMsg.style.color = "#ffaaaa";
+
+        const mapped_data = {
+            name: data.name,
+            email: session.user.email || data.email,
+            phone: data.phone,
+            places: data.places.join(', '),
+            date: data.date,
+            duration: 1,
+            group_size: 1,
+            special_requirements: `Language: ${data.language}`,
+            user_id: session.user.id
+        };
+
+        const { error } = await window.supabaseClient.from('guide_bookings').insert(mapped_data);
+        
+        if (error) throw error;
+
+        document.getElementById('gMsg').textContent = "Guide booking submitted successfully!";
+        document.getElementById('gMsg').style.color = "#9fe29f";
+      } catch (error) {
+        document.getElementById('gMsg').textContent = "Network error. Please check connection.";
+        document.getElementById('gMsg').style.color = "#ffaaaa";
+      }
+    }
+
+    async function bookTransport(){
+      const data = {
+        name: document.getElementById('tName').value.trim(),
+        from: document.getElementById('tFrom').value.trim(),
+        to: document.getElementById('tTo').value.trim(),
+        vehicle: document.getElementById('tVehicle').value,
+        when: document.getElementById('tDate').value
+      };
+      
+      if(!data.name || !data.from || !data.to || !data.when){ 
+        document.getElementById('tMsg').textContent="Please complete all fields."; 
+        document.getElementById('tMsg').style.color="#ffaaaa"; 
+        return; 
+      }
+      
+        const session = await getSession();
+        if (!session) {
+          sessionStorage.setItem('redirectAfterLogin', window.location.href);
+          window.location.href = 'templates/login.html';
+          return;
         }
+
+        let d_date = data.when;
+        let d_time = '10:00:00';
+        if (d_date.includes('T')) {
+           const parts = d_date.split('T');
+           d_date = parts[0];
+           d_time = parts[1];
+        }
+
+        const mapped_data = {
+            name: data.name,
+            email: session.user.email,
+            phone: '0000000000',
+            pickup_location: data.from,
+            destination: data.to,
+            date: d_date,
+            time: d_time,
+            passengers: 1,
+            vehicle_type: data.vehicle,
+            user_id: session.user.id
+        };
+
+        const { error } = await window.supabaseClient.from('transport_bookings').insert(mapped_data);
+        
+        if (error) throw error;
+
+        document.getElementById('tMsg').textContent = "Transport booking submitted successfully!";
+        document.getElementById('tMsg').style.color = "#9fe29f";
+      } catch (error) {
+        document.getElementById('tMsg').textContent = "Network error. Please check connection.";
+        document.getElementById('tMsg').style.color = "#ffaaaa";
       }
     }
     
-    // -------- Activity Booking Function ----------
+    // -------- Activity Booking ----------
     async function bookActivity() {
-      const session = await getSession();
-      if (!session) {
-        sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
-        return;
-      }
       const data = {
         name: document.getElementById('aName').value.trim(),
         phone: document.getElementById('aPhone').value.trim(),
@@ -922,56 +931,56 @@
       if (!data.name || !data.phone || !data.date || !data.activity) { 
         document.getElementById('aMsg').textContent = "Please fill name, phone, activity and date.";
         document.getElementById('aMsg').style.color = "#ffaaaa"; 
-        return;
+        return; 
       }
-      try {
-        const r = await fetch(`${window.API_BASE}/book-activity`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(data)
-        });
-        const res = await r.json();
+      
+        const session = await getSession();
+        if (!session) {
+          sessionStorage.setItem('redirectAfterLogin', window.location.href);
+          window.location.href = 'templates/login.html';
+          return;
+        }
+
+        const mapped_data = {
+            name: data.name,
+            phone: data.phone,
+            email: data.email || session.user.email,
+            activity: data.activity,
+            location: data.location,
+            participants: parseInt(data.participants) || 1,
+            date: data.date,
+            experience_level: data.requirements,
+            user_id: session.user.id
+        };
+
+        const { error } = await window.supabaseClient.from('activity_bookings').insert(mapped_data);
         
-        const msgEl = document.getElementById('aMsg');
-        if (msgEl) {
-          if (r.ok && res.success) {
-            msgEl.textContent = res.message;
-            msgEl.style.color = "#9fe29f";
-            
-            // Clear form
-            document.getElementById('aName').value = '';
-            document.getElementById('aPhone').value = '';
-            document.getElementById('aEmail').value = '';
-            document.getElementById('aParticipants').value = '1';
-            document.getElementById('aDate').value = '';
-            document.getElementById('aRequirements').value = '';
-          } else {
-            msgEl.textContent = res.error || "Failed to submit request.";
-            msgEl.style.color = "#ffaaaa";
-          }
+        if (error) throw error;
+
+        document.getElementById('aMsg').textContent = "Activity booking submitted successfully!";
+        document.getElementById('aMsg').style.color = "#9fe29f";
+        
+        // Clear form on success
+        if (true) {
+          document.getElementById('aName').value = '';
+          document.getElementById('aPhone').value = '';
+          document.getElementById('aEmail').value = '';
+          document.getElementById('aActivity').value = '';
+          document.getElementById('aLocation').value = '';
+          document.getElementById('aParticipants').value = '';
+          document.getElementById('aDate').value = '';
+          document.getElementById('aRequirements').value = '';
         }
-      } catch (e) {
-        console.error(e);
-        const msgEl = document.getElementById('aMsg');
-        if (msgEl) {
-          msgEl.textContent = "Network error occurred.";
-          msgEl.style.color = "#ffaaaa";
-        }
+      } catch (error) {
+        document.getElementById('aMsg').textContent = "Network error. Please check connection.";
+        document.getElementById('aMsg').style.color = "#ffaaaa";
       }
     }
 
     // --------- Quick itinerary generator ----------
-    async function makePlan(){
-      const session = await getSession();
-      if (!session) {
-        sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
-        return;
-      }
-      const days = document.getElementById("days");
-      const plan = document.getElementById("plan");
-      const d = parseInt(days ? days.value : "1", 10);
-      const pace = paceSelectValue();
+    function makePlan(){
+      const d = parseInt(document.getElementById('days').value,10);
+      const pace = document.getElementById('pace').value;
       const blocks = {
         Relaxed: ["Slow breakfast","One major site","Local lunch","Siesta","Sunset viewpoint","Market stroll"],
         Balanced: ["Early start","2–3 sites","Lunch en-route","Short hike","Café break","Sunset point"],
@@ -989,53 +998,99 @@
       for(let i=0;i<d;i++){
         out.push(`Day ${i+1}: ${skeleton[i] || "Leisure / shopping / buffer"}\n  • ${daily.join("\n  • ")}`);
       }
-      if(plan) plan.textContent = out.join("\n\n");
+      document.getElementById('plan').textContent = out.join("\n\n");
     }
-    function paceSelectValue(){ return document.getElementById('pace')?.value || 'Balanced'; }
 
     // --------- Map (Leaflet + OSM) ----------
     document.addEventListener("DOMContentLoaded", function () {
-      if (typeof L === 'undefined') {
-        console.warn('Leaflet failed to load. Skipping map initialization.');
-        return;
-      }
-      try {
-        // Initialize map
-        var map = L.map('map').setView([23.6102, 85.2799], 7);
+      // Load places
+      loadPlaces();
+      
+      // Initialize map
+      var map = L.map('map').setView([23.6102, 85.2799], 7);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
 
-        // Add markers with clickable links to Google Maps
-        const sites = [
-          { name: "Hundru Falls", coords: [23.6355, 85.3096] },
-          { name: "Jonha Falls", coords: [23.3700, 85.3300] },
-          { name: "Dassam Falls", coords: [23.4700, 85.5600] },
-          { name: "Betla National Park", coords: [23.8500, 84.2000] },
-          { name: "Netarhat", coords: [23.4700, 84.2700] },
-          { name: "Patratu Valley", coords: [23.6800, 85.2800] },
-          { name: "Baidyanath Temple (Deoghar)", coords: [24.4800, 86.7000] },
-          { name: "Parasnath Hill (Shikharji)", coords: [23.9200, 86.1500] }
-        ];
+      // Add markers
+      const sites = [
+        { name: "Hundru Falls", coords: [23.6355, 85.3096] },
+        { name: "Jonha Falls", coords: [23.3700, 85.3300] },
+        { name: "Dassam Falls", coords: [23.4700, 85.5600] },
+        { name: "Betla National Park", coords: [23.8500, 84.2000] },
+        { name: "Netarhat", coords: [23.4700, 84.2700] },
+        { name: "Patratu Valley", coords: [23.6800, 85.2800] },
+        { name: "Baidyanath Temple (Deoghar)", coords: [24.4800, 86.7000] },
+        { name: "Parasnath Hill (Shikharji)", coords: [23.9200, 86.1500] }
+      ];
 
-        sites.forEach(site => {
-          L.marker(site.coords).addTo(map)
-            .bindPopup(`<a href="https://www.google.com/maps?q=${site.coords[0]},${site.coords[1]}" target="_blank">${site.name}</a>`);
-        });
-      } catch (e) {
-        console.error('Error initializing map:', e);
-      }
+      sites.forEach(site => {
+        L.marker(site.coords).addTo(map)
+          .bindPopup(`<a href="https://www.google.com/maps?q=${site.coords[0]},${site.coords[1]}" target="_blank">${site.name}</a>`);
+      });
     });
 
-    // --------- Improved Chatbot ----------
-    async function handleChat() {
-      const session = await getSession();
-      if (!session) {
-        sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
-        return;
+    // --------- Chatbot ----------
+    const defaultPrompts = {
+      English: [
+        "What are the best places to visit in Jharkhand?",
+        "How is the weather in Netarhat during winter?",
+        "What activities can I do at Dassam Falls?",
+        "Tell me about tribal culture in Jharkhand",
+        "What permits do I need for Betla National Park?"
+      ],
+      Hindi: [
+        "झारखंड में घूमने की सबसे अच्छी जगहें कौन सी हैं?",
+        "सर्दियों में नेतरहाट का मौसम कैसा रहता है?",
+        "दसम फॉल्स में मैं क्या गतिविधियां कर सकता हूं?",
+        "झारखंड की आदिवासी संस्कृति के बारे में बताएं",
+        "बेतला राष्ट्रीय उद्यान के लिए कौन से परमिट चाहिए?"
+      ],
+      Bangla: [
+        "ঝাড়খণ্ডে ঘুরতে যাওয়ার সেরা জায়গাগুলো কোনগুলো?",
+        "শীতকালে নেতারহাটের আবহাওয়া কেমন থাকে?",
+        "দাসাম জলপ্রপাতে আমি কী কী কার্যকলাপ করতে পারি?",
+        "ঝাড়খণ্ডের উপজাতীয় সংস্কৃতি সম্পর্কে বলুন",
+        "বেতলা জাতীয় উদ্যানের জন্য কী কী অনুমতি লাগে?"
+      ]
+    };
+
+    function showDefaultPrompts() {
+      const lang = document.getElementById('chatLang').value;
+      const log = document.getElementById('chatLog');
+      
+      if (log.children.length === 0) {
+        const welcome = document.createElement('div');
+        welcome.className = 'chat-message bot-message';
+        const welcomeText = {
+          English: "Welcome! I'm your Jharkhand tourism assistant. Here are some questions you can ask:",
+          Hindi: "स्वागत है! मैं आपका झारखंड पर्यटन सहायक हूं। यहां कुछ प्रश्न हैं जो आप पूछ सकते हैं:",
+          Bangla: "স্বাগতম! আমি আপনার ঝাড়খণ্ড পর্যটন সহায়ক। এখানে কিছু প্রশ্ন রয়েছে যা আপনি জিজ্ঞাসা করতে পারেন:"
+        };
+        welcome.innerHTML = `<strong>Assistant (${lang}):</strong> ${welcomeText[lang] || welcomeText.English}`;
+        log.appendChild(welcome);
+        
+        const prompts = defaultPrompts[lang] || defaultPrompts.English;
+        prompts.forEach(prompt => {
+          const promptDiv = document.createElement('div');
+          promptDiv.className = 'chat-message bot-message';
+          promptDiv.style.cursor = 'pointer';
+          promptDiv.style.border = '1px solid #2b3446';
+          promptDiv.style.opacity = '0.8';
+          promptDiv.innerHTML = `💬 ${prompt}`;
+          promptDiv.onclick = () => {
+            document.getElementById('chatInput').value = prompt;
+            handleChat();
+          };
+          log.appendChild(promptDiv);
+        });
+        
+        log.scrollTop = log.scrollHeight;
       }
+    }
+
+    async function handleChat() {
       const box = document.getElementById('chatInput');
       const lang = document.getElementById('chatLang').value;
       const q = box.value.trim();
@@ -1044,76 +1099,137 @@
       
       const log = document.getElementById('chatLog');
       
-      // Add user message
       const you = document.createElement('div');
       you.className = 'chat-message user-message';
       you.innerHTML = `<strong>You:</strong> ${q}`;
       log.appendChild(you);
       
-      // Process question and generate response
-      const response = processQuestion(q, lang);
-      
-      // Add bot response after a short delay to simulate thinking
       setTimeout(() => {
         const a = document.createElement('div');
         a.className = 'chat-message bot-message';
-        a.innerHTML = `<strong>Assistant (${lang}):</strong> ${response}`;
+        a.innerHTML = `<strong>Assistant (${lang}):</strong> ${getChatbotResponse(q.toLowerCase(), lang)}`;
         log.appendChild(a);
-        
-        // Scroll to bottom
         log.scrollTop = log.scrollHeight;
       }, 600);
       
-      // Clear input
       box.value = "";
     }
-    
-    function processQuestion(question, language) {
-      question = question.toLowerCase();
-      
-      // Weather related questions
-      if (question.includes('weather') || question.includes('temperature') || question.includes('rain')) {
+
+    function getChatbotResponse(question, language) {
+      if (question.includes('weather') || question.includes('climate') || question.includes('temperature')) {
         const responses = {
           English: [
-            "The weather in Jharkhand is generally pleasant. Currently, it's around 25°C with partly cloudy skies.",
-            "Jharkhand has a subtropical climate. Today's forecast shows sunshine with a high of 28°C and a low of 18°C.",
-            "This time of year, Jharkhand experiences mild temperatures averaging 22-30°C with low humidity.",
-            "The weather is perfect for tourism! Expect clear skies with temperatures around 26°C during the day."
+            "Jharkhand has a tropical climate. Winter (Nov-Feb) is the best time to visit with temperatures 10-25°C. Summer (Mar-May) can be hot with temperatures up to 40°C.",
+            "The weather in Jharkhand varies by season. Monsoon (Jun-Sep) brings heavy rainfall, making it great for waterfalls but challenging for trekking.",
+            "Best weather for tourism is October to March when it's cool and pleasant. Netarhat and hill stations are cooler year-round.",
+            "Current weather varies by location. Hill stations like Netarhat are generally 5-10°C cooler than plains. Check local forecasts before traveling."
           ],
           Hindi: [
-            "झारखंड में मौसम आम तौर पर सुहावना रहता है। वर्तमान में, यह आंशिक रूप से बादलों वाली आसमान के साथ लगभग 25°C है।",
-            "झारखंड में उपोष्णकटिबंधीय जलवायु है। आज के पूर्वानुमान में अधिकतम 28°C और न्यूनतम 18°C के साथ धूप दिखाई दे रही है।"
+            "झारखंड में उष्णकटिबंधीय जलवायु है। सर्दी (नव-फर) घूमने का सबसे अच्छा समय है जब तापमान 10-25°C होता है। गर्मी (मार-मई) में तापमान 40°C तक हो सकता है।",
+            "झारखंड में मौसम ऋतु के अनुसार बदलता रहता है। मानसून (जून-सित) में भारी बारिश होती है, जो झरनों के लिए बेहतरीन है लेकिन ट्रेकिंग के लिए चुनौतीपूर्ण।"
           ],
           Bangla: [
-            "ঝাড়খণ্ডের আবহাওয়া সাধারণত মনোরম। বর্তমানে, আংশিক মেঘলা আকাশ সহ প্রায় 25°C।",
-            "ঝাড়খণ্ডের একটি উপক্রান্তীয় জলবায়ু রয়েছে। আজকের পূর্বাভাসে সর্বোচ্চ 28°C এবং সর্বনিম্ন 18°C তাপমাত্রার সাথে রোদ দেখাচ্ছে।"
-          ]
+            "ঝাড়খণ্ডে গ্রীষ্মমন্ডলীয় জলবায়ু রয়েছে। শীতকাল (নভেম্বর-ফেব্রুয়ারি) ভ্রমণের জন্য সেরা সময় যখন তাপমাত্রা ১০-২৫°সে থাকে। গ্রীষ্মকালে (মার্চ-মে) তাপমাত্রা ৪০°সে পর্যন্ত হতে পারে।",
+            "ঝাড়খণ্ডের আবহাওয়া ঋতু অনুযায়ী পরিবর্তিত হয়। বর্ষাকাল (জুন-সেপ্টেম্বর) প্রচুর বৃষ্টিপাত নিয়ে আসে, যা জলপ্রপাতের জন্য দুর্দান্ত কিন্তু ট্রেকিংয়ের জন্য চ্যালেঞ্জিং।"
+          ],
+          Gujarati: [
+            "ઝારખંડમાં ઉષ્ણકટિબંધીય હવામાન છે. ઠંડી (નવે-ફેબ) મુલાકાત લેવાનો શ્રેષ્ઠ સમય છે જ્યારે તાપમાન 10-25°C હોય છે. ઉનાળો (માર્ચ-મે) 40°C સુધીની ગરમી સાથે ગરમ હોઈ શકે છે.",
+            "ઝારખંડમાં હવામાન ઋતુ મુજબ બદલાય છે. મોસમી (જૂન-સપ્ટે) ભારે વરસાળ લાવે છે, જે ધોધ માટે મહાન છે પરંતુ ટ્રેકિંગ માટે પડકારરૂપ છે.",
+            "પર્યટન માટેનું શ્રેષ્ઠ હવામાન ઑક્ટોબરથી માર્ચ છે જ્યારે તે ઠંડું અને સુખદ હોય છે. નેતરહાટ અને હિલ સ્ટેશનો વર્ષભર ઠંડા રહે છે.",
+            "વર્તમાન હવામાન સ્થાન મુજબ બદલાય છે. નેતરહાટ જેવા હિલ સ્ટેશનો સામાન્ય રીતે મેદાનો કરતાં 5-10°C ઠંડા હોય છે. મુસાફરી કરતા પહેલાં સ્થાનિક પૂર્વાનુમાન તપાસો."
+          ],
+          Tamil: [
+            "ஜார்கண்ட் ஒரு வெப்பமண்டல காலநிலையைக் கொண்டுள்ளது. குளிர்காலம் (நவ-பெப்) பார்வையிட சிறந்த நேரம், இங்கு வெப்பநிலை 10-25°C ஆகும். கோடை (மார்-மே) 40°C வரை வெப்பத்துடன் சூடாக இருக்கும்.",
+            "ஜார்கண்டில் வானிலை பருவத்திற்கு ஏற்ப மாறுபடும். பருவமழை (ஜூன்-செப்) கனமான மழையைக் கொண்டுவரும், இது அருவிகளுக்கு சிறந்ததாக இருக்கும் ஆனால் நடைபயணத்திற்கு சவாலானதாக இருக்கும்.",
+          "சுற்றுலாவிற்கான சிறந்த வானிலை அக்டோபர் முதல் மார்ச் வரை, இது குளிர்ச்சியாகவும் இனிமையாகவும் இருக்கும். நேதர்ஹாட் மற்றும் மலைவாழிடங்கள் ஆண்டு முழுவதும் குளிர்ச்சியாக இருக்கும்.",
+          "தற்போதைய வானிலை இடத்திற்கு ஏற்ப மாறுபடும். நேதர்ஹாட் போன்ற மலைவாழிடங்கள் பொதுவாக சமவெளிகளை விட 5-10°C குளிர்ச்சியாக இருக்கும். பயணம் செய்வதற்கு முன் உள்ளூர் வானிலை முன்னறிவிப்புகளை சரிபார்க்கவும்."
+        ],
+        Khortha: [
+            "झारखंड के मौसम उष्णकटिबंधीय ह। सर्दी (नवे-फेब) घूमे के सबसे अच्छा समय ह, जखन तापमान 10-25°C होय। गर्मी (मार्च-मई) 40°C धरि गर्म होय सकै ह।",
+            "ஜார்கண்டில் வானிலை பருவத்திற்கு ஏற்ப மாறுபடும். பருவமழை (ஜூன்-செப்) கனமான மழையைக் கொண்டுவரும், இது அருவிகளுக்கு சிறந்ததாக இருக்கும் ஆனால் நடைபயணத்திற்கு சவாலானதாக இருக்கும்.",
+          "சுற்றுலாவிற்கான சிறந்த வானிலை அக்டோபர் முதல் மார்ச் வரை, இது குளிர்ச்சியாகவும் இனிமையாகவும் இருக்கும். நேதர்ஹாட் மற்றும் மலைவாழிடங்கள் ஆண்டு முழுவதும் குளிர்ச்சியாக இருக்கும்.",
+          "தற்போதைய வானிலை இடத்திற்கு ஏற்ப மாறுபடும். நேதர்ஹாட் போன்ற மலைவாழிடங்கள் பொதுவாக சமவெளிகளை விட 5-10°C குளிர்ச்சியாக இருக்கும். பயணம் செய்வதற்கு முன் உள்ளூர் வானிலை முன்னறிவிப்புகளை சரிபார்க்கவும்."
+        ]
         };
         return getRandomResponse(responses[language] || responses.English);
       }
       
-      // Travel time questions
-      else if (question.includes('travel') || question.includes('time') || question.includes('how long') || question.includes('distance')) {
+      else if (question.includes('time') || question.includes('distance') || question.includes('travel') || question.includes('reach')) {
         const responses = {
           English: [
-            "Travel times in Jharkhand vary by destination. From Ranchi to most tourist spots, it takes 2-4 hours by road.",
-            "Depending on your destination, travel times can range from 1 hour to 5 hours. Could you specify where you're planning to go?",
-            "Jharkhand has good road connectivity. Most inter-city travels take 2-3 hours on average.",
-            "Travel times depend on your starting point and destination. For example, Ranchi to Dassam Falls is about 2 hours by car."
+            "Travel times in Jharkhand vary by destination. Ranchi to Netarhat takes about 5-6 hours by road. Ranchi to Dassam Falls is about 1.5 hours.",
+            "From Ranchi: Hundru Falls (45 min), Betla National Park (4-5 hours), Deoghar (6-7 hours). Roads are generally good but can be winding in hilly areas.",
+            "Best way to travel is by car or bus. Train connectivity is good to major cities like Ranchi, Jamshedpur, and Dhanbad. Local transport includes auto-rickshaws and taxis.",
+            "For accurate travel times, consider traffic and road conditions. Monsoon season may increase travel time due to road conditions."
           ],
           Hindi: [
-            "झारखंड में यात्रा का समय गंतव्य के अनुसार अलग-अलग होता है। रांची से अधिकांश पर्यटन स्थलों तक सड़क मार्ग से 2-4 घंटे लगते हैं।",
-            "आपके गंतव्य के आधार पर, यात्रा का समय 1 घंटे से 5 घंटे तक हो सकता है। क्या आप बता सकते हैं कि आप कहाँ जाने की योजना बना रहे हैं?"
+            "झारखंड में यात्रा का समय गंतव्य के अनुसार अलग होता है। रांची से नेतरहाट सड़क मार्ग से लगभग 5-6 घंटे लगते हैं। रांची से दासम फॉल्स लगभग 1.5 घंटे।",
+            "रांची से: हुंडरू फॉल्स (45 मिनट), बेतला राष्ट्रीय उद्यान (4-5 घंटे), देवघर (6-7 घंटे)। सड़कें आम तौर पर अच्छी हैं लेकिन पहाड़ी क्षेत्रों में घुमावदार हो सकती हैं।"
           ],
           Bangla: [
-            "ঝাড়খণ্ডে ভ্রমণের সময় গন্তব্যের উপর নির্ভর করে পরিবর্তিত হয়। রাঁচি থেকে বেশিরভাগ পর্যটন স্পটে, সড়কপথে 2-4 ঘন্টা সময় লাগে।",
-            "আপনার গন্তব্যের উপর নির্ভর করে, ভ্রমণের সময় 1 ঘন্টা থেকে 5 ঘন্টা পর্যন্ত হতে পারে। আপনি কি নির্দিষ্ট করতে পারেন যে আপনি কোথায় যাওয়ার পরিকল্পনা করছেন?"
-          ]
+            "ঝাড়খণ্ডে ভ্রমণের সময় গন্তব্য অনুযায়ী পরিবর্তিত হয়। রাঁচি থেকে নেতারহাট সড়কপথে প্রায় ৫-৬ ঘন্টা লাগে। রাঁচি থেকে দাসম ফলস প্রায় ১.৫ ঘন্টা।",
+            "রাঁচি থেকে: হুন্ডরু ফলস (৪৫ মিনিট), বেতলা জাতীয় উদ্যান (৪-৫ ঘন্টা), দেওঘর (৬-৭ ঘন্টা)। রাস্তাগুলি সাধারণত ভাল কিন্তু পাহাড়ি এলাকায় আঁকাবাঁকা হতে পারে।"
+          ],
+          Gujarati: [
+    "ઝારખંડમાં મુસાફરીનો સમય ગંતવ્ય સ્થાન મુજબ બદલાય છે. રાંચીથી નેતરહાટ સડક માર્ગે લગભગ 5-6 કલાક લાગે છે. રાંચીથી દાસમ ફોલ્સ લગભગ 1.5 કલાક.",
+    "રાંચીથી: હુંડરુ ફોલ્સ (45 મિનિટ), બેતલા નેશનલ પાર્ક (4-5 કલાક), દેવઘર (6-7 કલાક). સડકો સામાન્ય રીતે સારી છે પરંતુ પહાડી વિસ્તારોમાં વળાંકદાર હોઈ શકે છે.",
+    "મુસાફરી કરવાનો શ્રેષ્ઠ માર્ગ કાર અથવા બસ છે. રાંચી, જમશેદપુર અને ધનબદ જેવા મુખ્ય શહેરો સુધી રેલ્વે કનેક્ટિવિટી સારી છે. સ્થાનિક પરિવહનમાં ઑટો-રિક્ષા અને ટેક્સીનો સમાવેશ થાય છે.",
+    "ચોક્કસ મુસાફરીના સમય માટે, ટ્રાફિક અને રોડ કન્ડિશનને ધ્યાનમાં લો. મોસમી સીઝનમાં રોડ કન્ડિશનને કારણે મુસાફરીનો સમય વધી શકે છે."
+  ],
+ Tamil: [
+    "ஜார்கண்டில் பயண நேரம் சேரும் இடத்தைப் பொறுத்து மாறுபடும். ராஞ்சியிலிருந்து நேதர்ஹாட் சாலை வழியாக சுமார் 5-6 மணி நேரம் ஆகும். ராஞ்சியிலிருந்து தாஸம் வீழ்ச்சி சுமார் 1.5 மணி நேரம்.",
+    "ராஞ்சியிலிருந்து: ஹுந்த்ரு வீழ்ச்சி (45 நிமிடம்), பெத்லா தேசிய பூங்கா (4-5 மணி நேரம்), தேவ்஘ர் (6-7 மணி நேரம்). சாலைகள் பொதுவாக நல்லதாக இருக்கும் ஆனால் மலைப்பாங்கான பகுதிகளில் வளைவுகளாக இருக்கக்கூடும்.",
+    "பயணம் செய்ய சிறந்த வழி கார் அல்லது பஸ் ஆகும். ராஞ்சி, ஜம்ஷெட்பூர் மற்றும் தன்பாத் போன்ற முக்கிய நகரங்களுக்கு ரயில் இணைப்பு நல்லது. உள்ளூர் போக்குவரத்தில் ஆட்டோ-ரிக்ஷாக்கள் மற்றும் வாடகை உந்துந்துகள் அடங்கும்.",
+    "துல்லியமான பயண நேரங்களுக்கு, போக்குவரத்து மற்றும் சாலை நிலைமைகளை கருத்தில் கொள்ளவும். பருவமழை காலத்தில் சாலை நிலைமைகள் காரணமாக பயண நேரம் அதிகரிக்கும்."
+  ],
+  Khortha: [
+    "झारखंड में यात्रा के समय जगह अनुसार अलग होय ह। रांची स नेतरहाट लगभग 5-6 घंटा लागै ह। रांची स दासम फॉल्स लगभग डेढ़ घंटा लागै ह।",
+    "रांची स: हुंडरू फॉल्स (45 मिनट), बेतला नेशनल पार्क (4-5 घंटा), देवघर (6-7 घंटा)। सड़क आमतौर प अच्छा ह लेकिन पहाड़ी इलाका में घुमावदार होय सकै ह।",
+    "सबसे अच्छा तरीका ह कार या बस स यात्रा करे के। रांची, जमशेदपुर आ धनबद जइसन बड़ शहर स ट्रेन कनेक्शन बढ़िया ह। ऑटो-रिक्शा आ टैक्सी स्थानीय परिवहन ह।",
+    "सही यात्रा समय खातिर, ट्रैफिक आ सड़क के हालत के ध्यान में रखनी चाही। बरखा के मौसम में सड़क के हालत खराब होए के कारण यात्रा के समय बढ़ी सकै ह।"
+  ]
         };
         return getRandomResponse(responses[language] || responses.English);
       }
       
-      // Permit related questions
+      else if (question.includes('culture') || question.includes('tribal') || question.includes('tradition') || question.includes('festival')) {
+        const responses = {
+          English: [
+            "Jharkhand is rich in tribal culture with 32+ indigenous communities including Santhal, Munda, Oraon, and Ho tribes. Each has unique traditions, dances, and festivals.",
+            "Major festivals include Sarhul (spring festival), Karam (harvest festival), and Tusu Parab. These celebrate nature, agriculture, and tribal heritage.",
+            "Traditional arts include Dokra metal casting, Paitkar painting, Sohrai wall art, and bamboo crafts. Many villages still practice these ancient crafts.",
+            "Tribal dances like Chhau, Jhumair, and Karam are integral to celebrations. Music features traditional instruments like Mandar, Nagara, and flute."
+          ],
+          Hindi: [
+            "झारखंड संथाल, मुंडा, उरांव और हो जनजातियों सहित 32+ स्वदेशी समुदायों के साथ आदिवासी संस्कृति में समृद्ध है। प्रत्येक की अनूठी परंपराएं, नृत्य और त्योहार हैं।",
+            "प्रमुख त्योहारों में सरहुल (वसंत त्योहार), करम (फसल त्योहार), और तुसू पर्व शामिल हैं। ये प्रकृति, कृषि और आदिवासी विरासत का जश्न मनाते हैं।"
+          ],
+          Bangla: [
+            "ঝাড়খণ্ড সাঁওতাল, মুন্ডা, ওরাওঁ এবং হো উপজাতি সহ ৩২+ আদিবাসী সম্প্রদায়ের সাথে উপজাতীয় সংস্কৃতিতে সমৃদ্ধ। প্রতিটির অনন্য ঐতিহ্য, নৃত্য এবং উৎসব রয়েছে।",
+            "প্রধান উৎসবগুলির মধ্যে রয়েছে সারহুল (বসন্ত উৎসব), করম (ফসল উৎসব), এবং তুসু পরব। এগুলি প্রকৃতি, কৃষি এবং উপজাতীয় ঐতিহ্য উদযাপন করে।"
+          ],
+          Gujarati: [
+    "ઝારખંડ ૩૨+ આદિવાસી સમુદાયો સાથે આદિજાતિ સંસ્કૃતિમાં સમૃદ્ધ છે, જેમાં સંતાલ, મુંડા, ઓરાઓન અને હો જનજાતિઓનો સમાવેશ થાય છે. દરેકની પોતાની અનોખી પરંપરાઓ, નૃત્યો અને તહેવારો છે.",
+    "મુખ્ય તહેવારોમાં સરહુલ (વસંત તહેવાર), કરમ (વાવણી તહેવાર) અને તુસુ પરબનો સમાવેશ થાય છે. આ પ્રકૃતિ, કૃષિ અને આદિજાતિ વિરાસતનો ઉત્સવ મનાવે છે.",
+    "પરંપરાગત કલાઓમાં ઢોકરા મેટલ કાસ્ટિંગ, પૈટકર પેઇન્ટિંગ, સોહરાઈ દિવાલ કલા અને બાંબુ ક્રાફ્ટનો સમાવેશ થાય છે. ઘણાં ગામોમાં હજી પણ આ પ્રાચીન શિલ્પોનો અભ્યાસ કરવામાં આવે છે.",
+    "આદિજાતિ નૃત્યો જેમ કે છૌ, ઝુમૈર અને કરમ ઉત્સવોનો અભિન્ન અંગ છે. સંગીતમાં મંદાર, નગારા અને બાંસુરી જેવા પરંપરાગત વાદ્યોની વિશેષતા છે."
+  ],
+  Tamil: [
+    "சந்தால், முண்டா, ஓராவ் மற்றும் ஹோ பழங்குடிகள் உட்பட 32+ உள்நாட்டு சமூகங்களைக் கொண்ட பழங்குடி கலாச்சாரத்தில் ஜார்கண்ட் பண்பட்டுள்ளது. ஒவ்வொன்றும் தனித்துவமான பாரம்பரியங்கள், நடனங்கள் மற்றும் திருவிழாக்களைக் கொண்டுள்ளன.",
+    "முக்கிய திருவிழாக்களில் சர்ஹுல் (வசந்த விழா), கரம் (அறுவடை விழா) மற்றும் துசு பரப் ஆகியவை அடங்கும். இவை இயற்கை, விவசாயம் மற்றும் பழங்குடி மரபுகளைக் கொண்டாடுகின்றன.",
+    "பாரம்பரிய கலைகளில் டோக்ரா உலோக வார்ப்படம், பைட்கர் ஓவியம், சோஹ்ராய் சுவர் கலை மற்றும் மூங்கில் கைவினைப்பொருட்கள் ஆகியவை அடங்கும். பல கிராமங்களில் இன்னும் இந்த புராதன கைவினைப்பொருட்கள் பயிற்சி செய்யப்படுகின்றன.",
+    "சாவ், ஜுமைர் மற்றும் கரம் போன்ற பழங்குடி நடனங்கள் கொண்டாட்டங்களின் ஒருங்கிணைந்த பகுதியாகும். இசையில் மந்தார், நகாரா மற்றும் புல்லாங்குழல் போன்ற பாரம்பரிய இசைக்கருவிகள் அம்சங்களாக உள்ளன."
+  ],
+  Khortha: [
+    "झारखंड 32+ से भी अधिक आदिवासी समुदाय के संग समृद्ध ह, जेकरा में संथाल, मुंडा, उरांव आ हो जनजाति शामिल ह। हर एकर अपन अनूठा रीति-रिवाज, नाच आ त्योहार ह।",
+    "मुख्य त्योहार में सरहुल (बसंत त्योहार), करम (फसल त्योहार) आ तुसू परब शामिल ह। ई प्रकृति, खेती आ आदिवासी विरासत के उत्सव मनावै ह।",
+    "पारंपरिक कला में ढोकरा धातु कास्टिंग, पैटकर चित्रकारी, सोहराई दीवार कला आ बांस शिल्प शामिल ह। बहुत गांव में अबहू भी ई पुरान शिल्प के अभ्यास होय ह।",
+    "आदिवासी नाच जइसन छऊ, झुमर आ करम उत्सव के अभिन्न अंग ह। संगीत में मांदार, नगाड़ा आ बांसुरी जइसन पारंपरिक वाद्य यंत्र होय ह।"
+  ]
+        };
+        return getRandomResponse(responses[language] || responses.English);
+      }
+      
       else if (question.includes('permit') || question.includes('permission') || question.includes('document')) {
         const responses = {
           English: [
@@ -1124,17 +1240,34 @@
           ],
           Hindi: [
             "झारखंड के अधिकांश पर्यटन क्षेत्रों के लिए, किसी विशेष परमिट की आवश्यकता नहीं है। हालाँकि, कुछ वन्यजीव अभयारण्यों जैसे संरक्षित क्षेत्रों के लिए परमिट की आवश्यकता होती है।",
-            "आम तौर पर, भारतीय नागरिकों को झारखंड में पर्यटन के लिए परमिट की आवश্যकता नहीं होती है। विदेशी नागरिकों को संरक्षित क्षेत्रों के लिए विशिष्ट आवश्यकताओं की जांच करनी चाहिए।"
+            "आम तौर पर, भारतीय नागरिकों को झारखंड में पर्यटन के लिए परमिट की आवश्यकता नहीं होती है। विदेशी नागरिकों को संरक्षित क्षेत्रों के लिए विशिष्ट आवश्यकताओं की जांच करनी चाहिए।"
           ],
           Bangla: [
             "ঝাড়খণ্ডের বেশিরভাগ পর্যটন অঞ্চলের জন্য, কোন বিশেষ অনুমতির প্রয়োজন নেই। তবে, কিছু বন্যপ্রাণী অভয়ারণ্যের মতো সংরক্ষিত অঞ্চলগুলির জন্য অনুমতির প্রয়োজন হয়।",
             "সাধারণত, ভারতীয় নাগরিকদের ঝাড়খণ্ডে পর্যটনের জন্য অনুমতির প্রয়োজন নেই। বিদেশী নাগরিকদের সংরক্ষিত অঞ্চলগুলির জন্য নির্দিষ্ট প্রয়োজনীয়তা পরীক্ষা করা উচিত।"
-          ]
+          ],
+          Gujarati: [
+    "ઝારખંડના મોટાભાગના પર્યટન ક્ષેત્રો માટે, કોઈ વિશેષ પરવાના જરૂરી નથી. જો કે, કેટલાક વન્યજીવ અભયારણ્યો જેવા સુરક્ષિત ક્ષેત્રો માટે પરવાનગી જરૂરી છે.",
+    "સામાન્ય રીતે, ભારતીય નાગરિકોને ઝારખંડમાં પર્યટન માટે પરવાનગીની જરૂર નથી. વિદેશી નાગરિકોએ સુરક્ષિત ક્ષેત્રો માટેની ચોક્કસ આવશ્યકતાઓ તપાસવી જોઈએ.",
+    "મુખ્યત્વે પ્રતિબંધિત આદિજાતિ વિસ્તારો અને કેટલાક રાષ્ટ્રીય ઉદ્યાનો માટે પરવાનગી જરૂરી છે. મોટાભાગના પર્યટન સ્થળો માટે, કોઈ વિશેષ પરવાનગી જરૂરી નથી.",
+    "તમે જરૂરી પરવાનગીઓ ઝારખંડ ટૂરિઝમ ડેવલપમેન્ટ કોર્પોરેશન કાર્યાલયમાંથી અથવા તેમના પોર્ટલ દ્વારા ઓનલાઈન મેળવી શકો છો."
+  ],
+  Tamil: [
+    "ஜார்கண்டின் பெரும்பாலான சுற்றுலா பகுதிகளுக்கு, எந்த சிறப்பு அனுமதிகளும் தேவையில்லை. இருப்பினும், சில வனவிலங்கு சரணாலயங்கள் போன்ற பாதுகாக்கப்பட்ட பகுதிகளுக்கு அனுமதி தேவைப்படுகிறது.",
+    "பொதுவாக, இந்திய குடிமக்களுக்கு ஜார்கண்டில் சுற்றுலாவுக்கு அனுமதி தேவையில்லை. வெளிநாட்டு குடிமக்கள் பாதுகாக்கப்பட்ட பகுதிகளுக்கான குறிப்பிட்ட தேவைகளை சரிபார்க்க வேண்டும்.",
+    "அனுமதிகள் முக்கியமாக கட்டுப்படுத்தப்பட்ட பழங்குடி பகுதிகள் மற்றும் சில தேசிய பூங்காக்களுக்கு தேவைப்படுகின்றன. பெரும்பாலான சுற்றுலா இடங்களுக்கு, எந்த சிறப்பு அனுமதிகளும் தேவையில்லை.",
+    "தேவையான அனுமதிகளை ஜார்கண்ட் சுற்றுலா மேம்பாட்டுக் கழக அலுவலகத்தில் இருந்து அல்லது அவர்களின் இணையதளம் மூலம் ஆன்லைனில் பெறலாம்."
+  ],
+  Khortha: [
+    "झारखंड के ज्यादातर पर्यटन इलाका खातिर, कवनो खास परमिट के जरूरत नइखे। हालांकि, कुछ वन्यजीव अभयारण्य जइसन संरक्षित इलाका खातिर परमिट के जरूरत पड़ै ह।",
+    "आमतौर प, भारतीय नागरिकन के झारखंड में घूमे-फिरे खातिर परमिट के जरूरत नइखे। विदेशी नागरिकन के संरक्षित इलाका खातिर खास जरूरतन के जांच करनी चाही।",
+    "परमिट मुख्य रूप स प्रतिबंधित आदिवासी इलाका आ कुछ राष्ट्रीय उद्यान खातिर जरूरी ह। ज्यादातर पर्यटन स्थल खातिर, कवनो खास परमिट के जरूरत नइखे।",
+    "रांनी जरूरी परमिट झारखंड पर्यटन विकास निगम के दफ्तर स या उनकर पोर्टल के जरिए ऑनलाइन ले सकै ह।"
+  ]
         };
         return getRandomResponse(responses[language] || responses.English);
       }
       
-      // Activities questions
       else if (question.includes('trek') || question.includes('hike') || question.includes('activity') || question.includes('adventure')) {
         const responses = {
           English: [
@@ -1150,12 +1283,29 @@
           Bangla: [
             "ঝাড়খণ্ড দুর্দান্ত ট্রেকিং সুযোগ প্রদান করে! জনপ্রিয় ট্রেকগুলির মধ্যে রয়েছে পারসনাথ হিল, নেতারহাট ট্রেইল এবং রাঁচির চারপাশের হাইক। অসুবিধা সহজ থেকে চ্যালেঞ্জিং পর্যন্ত হয়।",
             "অ্যাডভেঞ্চার অ্যাক্টিভিটির জন্য, দাসম ফলসে জলপ্রপাত রেপেলিং, রক ক্লাইম্বিং বা সুবর্ণরেখা নদীতে রিভার রাফটিং চেষ্টা করুন। বেশিরভাগ ক্রিয়াকলাপের জন্য আগাম বুকিং প্রয়োজন।"
-          ]
+          ],
+        Gujarati: [
+    "ઝારખંડ અત્યુત્તમ ટ્રેકિંગ તકો પ્રદાન કરે છે! લોકપ્રિય ટ્રેકમાં પારસનાથ હિલ, નેતરહાટ ટ્રેલ અને રાંચી આસપાસની હાઇક્સનો સમાવેશ થાય છે. કઠિનતા સરળથી પડકારરૂપ સુધીની હોય છે.",
+    "સાહસિક પ્રવૃત્તિઓ માટે, દાસમ ફોલ્સ પર વોટરફોલ રેપલિંગ, રોક ક્લાઇમ્બિંગ અથવા સુવર્ણરેખા નદી પર રિવર રાફ્ટિંગ અજમાવો. મોટાભાગની પ્રવૃત્તિઓ માટે અગ્રિમ બુકિંગ જરૂરી છે.",
+    "લોકપ્રિય પ્રવૃત્તિઓમાં બેતલા નેશનલ પાર્કમાં જંગલ સફારી, આદિજાતિ ગામની મુલાકાતો અને પ્રકૃતિ સફરનો સમાવેશ થાય છે. દરેક સાહસિક સ્તર માટે કંઈક ન કંઈક છે!",
+    "ટ્રેકિંગ સીઝન ઑક્ટોબરથી માર્ચ સુધી શ્રેષ્ઠ હોય છે જ્યારે હવામાન ઠંડું હોય છે. મોસમી સીઝન (જૂન-સપ્ટે) ધોધ મુલાકાત માટે મહાન છે પરંતુ કેટલાક માર્ગો લપસણા હોઈ શકે છે."
+  ],
+  Tamil: [
+    "ஜார்கண்ட் சிறந்த நடைப்பயண வாய்ப்புகளை வழங்குகிறது! பிரபலமான நடைப்பயணங்களில் பரஸ்நாத் மலை, நேதர்ஹாட் பாதைகள் மற்றும் ராஞ்சியைச் சுற்றியுள்ள நடைப்பயணங்கள் அடங்கும். சிரமம் எளிது முதல் சவாலானது வரை இருக்கும்.",
+    "சாகச செயல்பாடுகளுக்கு, தாஸம் வீழ்ச்சியில் நீர்வீழ்ச்சி ரெப்பெல்லிங், பாறை ஏறுதல் அல்லது சுபர்ணரேகை நதியில் நீரோட்டப் படகுச் சவாரி முயற்சிக்கவும். பெரும்பாலான செயல்பாடுகளுக்கு முன்கூட்டியே பதிவு செய்வது தேவைப்படுகிறது.",
+    "பிரபலமான செயல்பாடுகளில் பெத்லா தேசிய பூங்காவில் காட்டுயிர் சஃபாரி, பழங்குடி கிராம பயணங்கள் மற்றும் இயற்கை நடைப்பயணங்கள் ஆகியவை அடங்கும். ஒவ்வொரு சாகச நிலைக்கும் ஏதோ ஒன்று இருக்கிறது!",
+    "நடைப்பயண காலம் அக்டோபர் முதல் மார்ச் வரை சிறந்தது, இப்போது வானிலை குளிர்ச்சியாக இருக்கும். பருவமழை காலம் (ஜூன்-செப்) நீர்வீழ்ச்சி பார்வைகளுக்கு நல்லது ஆனால் சில பாதைகள் வழுக்கும் தன்மை கொண்டிருக்கக்கூடும்."
+  ],
+  Khortha: [
+    "झारखंड बढ़िया ट्रेकिंग के मौका दै ह! लोकप्रिय ट्रेक में परसनाथ पहाड़, नेतरहाट के रास्ता आ रांची के आसपास के पैदल यात्रा शामिल ह। मुश्किल आसान स ले के चुनौती भरा होय सकै ह।",
+    "एडवेंचर एक्टिविटी खातिर, दासम फॉल्स पर झरना रैपलिंग, चट्टान चढ़ाई, या स्वर्णरेखा नदी पर नदी राफ्टिंग करे के कोसिस करीं। ज्यादातर एक्टिविटी में अग्रिम बुकिंग के जरूरत पड़ै ह।",
+    "लोकप्रिय एक्टिविटी में बेतला नेशनल पार्क में जंगल सफारी, आदिवासी गांव के भ्रमण, आ प्रकृति सैर शामिल ह। हर एडवेंचर के स्तर खातिर कुछ न कुछ ह!",
+    "ट्रेकिंग करे के सबसे अच्छा समय अक्टूबर स मार्च ह, जखन मौसम ठंडा होय ह। बरखा के मौसम (जून-सितंबर) झरना देखे खातिर बढ़िया ह लेकिन कुछ रास्ता फिसलन भरा होय सकै ह।"
+  ]
         };
         return getRandomResponse(responses[language] || responses.English);
       }
       
-      // General tourism questions
       else if (question.includes('place') || question.includes('visit') || question.includes('see') || question.includes('go')) {
         const responses = {
           English: [
@@ -1166,16 +1316,34 @@
           ],
           Hindi: [
             "झारखंड में घूमने के लिए कई सुंदर स्थान हैं! लोकप्रिय गंतव्यों में दासम फॉल्स, बेतला राष्ट्रीय उद्यान, हुंडरू फॉल्स और जगन्नाथ मंदिर शामिल हैं।",
-            "आपको झारखंड के अद्भुत झरनों को अवश्य देखना चाहिए! हुंडरू फॉल्स और दासम फॉल्स लोकप्रिय हैं।"
+            "आपको झारखंड के अद्भुत झरनों को अवश्य देखना चाहिए! लोकप्रिय हैं हुंडरू फॉल्स, दासम फॉल्स और जोन्हा फॉल्स। यह राज्य अपनी प्राकृतिक सुंदरता के लिए प्रसिद्ध है।"
           ],
           Bangla: [
-            "ঝাড়খণ্ডে দেখার মতো অনেক সুন্দর জায়গা রয়েছে! জনপ্রিয় গন্তব্যগুলির মধ্যে রয়েছে দাসম ফলস, বেতলা জাতীয় উদ্যান এবং হুন্ড্রু ফলস।"
-          ]
+            "ঝাড়খণ্ডে দেখার মতো অনেক সুন্দর জায়গা আছে! জনপ্রিয় গন্তব্যগুলির মধ্যে রয়েছে দাসম ফলস, বেতলা জাতীয় উদ্যান, হুন্ডরু ফলস এবং জগন্নাথ মন্দির।",
+            "আপনাকে অবশ্যই ঝাড়খণ্ডের অসাধারণ জলপ্রপাতগুলি দেখতে হবে! জনপ্রিয়গুলি হল হুন্ডরু ফলস, দাসম ফলস এবং জনহা ফলস। রাজ্যটি তার প্রাকৃতিক সৌন্দর্যের জন্য বিখ্যাত।"
+          ],
+          Gujarati: [
+    "ઝારખંડમાં મુલાકાત લેવા માટે ઘણી સુંદર જગ્યાઓ છે! લોકપ્રિય સ્થળોમાં દાસમ ફોલ્સ, બેતલા નેશનલ પાર્ક, હુંડરુ ફોલ્સ અને જગન્નાથ મંદિરનો સમાવેશ થાય છે.",
+    "તમારે ઝારખંડના અદ્ભુત ધોધ જરૂર જોવા જોઈએ! લોકપ્રિય ધોધમાં હુંડરુ ફોલ્સ, દાસમ ફોલ્સ અને જોન્હા ફોલ્સનો સમાવેશ થાય છે. આ રાજ્ય તેની પ્રાકૃતિક સુંદરતા માટે પ્રખ્યાત છે.",
+    "હું નેતરહાટની મુલાકાત લેવાની ભલામણ કરું છું, જેને ઘણીવાર તેના સુંદર સૂર્યોદય અને સૂર્યાસ્ત માટે 'છોટા નાગપુરની રાણી' કહેવામાં આવે છે. તેમજ બેતલા નેશનલ પાર્કમાં વન્યજીવનને ન ચૂકશો.",
+    "ઝારખંડમાં ટોચનાં આકર્ષણોમાં પાટરાટુ વેલી, ટાગોર હિલ, રોક ગાર્ડન અને બૈદ્યનાથ ધામનો ધાર્મિક સ્થળનો સમાવેશ થાય છે. દરેક પ્રકારના મુસાફર માટે કંઈક ન કંઈક છે!"
+  ],
+  Tamil: [
+    "ஜார்கண்டில் பார்க்க பல அழகான இடங்கள் உள்ளன! பிரபலமான இடங்களில் தாஸம் வீழ்ச்சி, பெத்லா தேசிய பூங்கா, ஹுந்த்ரு வீழ்ச்சி மற்றும் ஜகன்னாத் கோயில் ஆகியவை அடங்கும்.",
+    "ஜார்கண்டின் அற்புதமான நீர்வீழ்ச்சிகளை நீங்கள் கண்டிப்பாக பார்க்க வேண்டும்! பிரபலமானவை ஹுந்த்ரு வீழ்ச்சி, தாஸம் வீழ்ச்சி மற்றும் ஜோன்ஹா வீழ்ச்சி. இந்த மாநிலம் அதன் இயற்கை அழகுக்கு பிரபலமானது.",
+    "அழகிய சூரிய உதயங்கள் மற்றும் சூரிய அஸ்தமனங்களுக்காக 'சோட்டா நாக்பூரின் ராணி' என்று அழைக்கப்படும் நேதர்ஹாட்டைப் பார்க்க பரிந்துரைக்கிறேன். மேலும் பெத்லா தேசிய பூங்காவில் வனவிலங்குகளை தவறவிடாதீர்கள்.",
+    "ஜார்கண்டின் முதன்மை ஈர்ப்புகளில் பட்ராட்டு பள்ளத்தாக்கு, தாகூர் மலை, ராக் கார்டன் மற்றும் பைத்தியநாத் தாமத்தின் மத தளம் ஆகியவை அடங்கும். ஒவ்வொரு வகையான பயணிக்கும் ஏதோ ஒன்று இருக்கிறது!"
+  ],
+  Khortha: [
+    "झारखंड में घूमे लायक बहुत सुंदर जगह ह! लोकप्रिय जगह में दासम फॉल्स, बेतला नेशनल पार्क, हुंडरू फॉल्स आ जगन्नाथ मंदिर शामिल ह।",
+    "रांनी झारखंड के लोभरा झरना जरूर देखनी चाही! लोकप्रिय झरना में हुंडरू फॉल्स, दासम फॉल्स आ जोन्हा फॉल्स ह। ई राज्य अपन प्राकृतिक सुंदरता खातिर मशहूर ह।",
+    "हम नेतरहाट घूमे के सलाह दै ह, जेकरा के अक्सर 'छोटानागपुर के रानी' कहल जाला, अपन सुंदर सूरज उगे आ डूबे खातिर। आ बेतला नेशनल पार्क के जानवरन के भी जरूर देखीं।",
+    "झारखंड के टॉप आकर्षण में पतरातू घाटी, टैगोर पहाड़ी, रॉक गार्डन आ बैद्यनाथ धाम के धार्मिक जगह शामिल ह। हर किसिम के यात्री खातिर कुछ न कुछ ह!"
+  ]
         };
         return getRandomResponse(responses[language] || responses.English);
       }
       
-      // Hello
       else if (question.includes('hello') || question.includes('hi') || question.includes('hey') || question.includes('namaste')) {
         const responses = {
           English: [
@@ -1190,12 +1358,26 @@
           Bangla: [
             "হ্যালো! আজ আমি আপনার ঝাড়খণ্ড ভ্রমণের পরিকল্পনায় কীভাবে সাহায্য করতে পারি?",
             "হাই! আপনি ঝাড়খণ্ড পর্যটন সম্পর্কে কী জানতে চান?"
-          ]
+          ],
+          Gujarati: [
+    "હેલો! હું તમારી ઝારખંડ યાત્રા યોજનાઓમાં આજે કેવી રીતે સહાય કરી શકું?",
+    "હાય! તમે ઝારખંડ પર્યટન વિશે શું જાણવા માંગો છો?",
+    "નમસ્તે! ઝારખંડ પર્યટનમાં આપનું સ્વાગત છે. હું આજે તમારી કેવી રીતે સહાય કરી શકું?"
+  ],
+  Tamil: [
+    "வணக்கம்! இன்று உங்கள் ஜார்கண்ட் பயணத் திட்டங்களுக்கு நான் எவ்வாறு உதவ முடியும்?",
+    "வணக்கம்! ஜார்கண்ட் சுற்றுலா பற்றி நீங்கள் என்ன தெரிந்து கொள்ள விரும்புகிறீர்கள்?",
+    "நமஸ்காரம்! ஜார்கண்ட் சுற்றுலாவிற்கு வரவேற்கிறோம். இன்று நான் உங்களுக்கு எவ்வாறு உதவ முடியும்?"
+  ],
+  Khortha: [
+    "हेलो! आज हम राएर झारखंड यात्रा के योजना में कैसे मदद करी सकै ह?",
+    "नमस्ते! रां झारखंड पर्यटन के बारे में क्या जानना चाही ह?",
+    "नमस्ते! झारखंड पर्यटन में स्वागत ह। आज हम राएर कैसे मदद करी सकै ह?"
+  ]
         };
         return getRandomResponse(responses[language] || responses.English);
       }
       
-      // Thank you
       else if (question.includes('thank')) {
         const responses = {
           English: [
@@ -1208,14 +1390,28 @@
             "मदद करके खुशी हुई! यदि आपके कोई अन्य प्रश्न हैं तो मुझे बताएं।"
           ],
           Bangla: [
-            "আপনাকে স্বাগতম! ঝাড়খণ্ড সম্পর্কে আপনি还有什么想知道吗?",
+            "আপনাকে স্বাগতম! ঝাড়খণ্ড সম্পর্কে আপনার আর কিছু জানার আছে কি?",
             "সাহায্য করে খুশি! আপনার অন্য কোন প্রশ্ন থাকলে আমাকে জানান।"
-          ]
+          ],
+          Gujarati: [
+    "તમારું સ્વાગત છે! શું તમે ઝારખંડ વિશે કંઈક વધારે જાણવા માંગો છો?",
+    "મદદ કરીને આનંદ થયો! જો તમારા કોઈપણ અન્ય પ્રશ્નો હોય તો મને જણાવો.",
+    "મને આનંદ થયો! જો તમને ઝારખંડ પર્યટન વિશે વધુ માહિતી જોઈએ તો બેધડક પૂછો."
+  ],
+  Tamil: [
+    "தங்களுக்கு வரவேற்பு! ஜார்கண்ட் பற்றி மேலும் ஏதாவது தெரிந்து கொள்ள விரும்புகிறீர்களா?",
+    "உதவி செய்ய மகிழ்ச்சி! உங்களுக்கு வேறு எந்த கேள்விகள் இருந்தால் எனக்கு தெரியப்படுத்துங்கள்.",
+    "மகிழ்ச்சி! ஜார்கண்ட் சுற்றுலா பற்றி கூடுதல் தகவல் தேவைப்பட்டால் கேட்க தயங்க வேண்டாம்."
+  ],
+  Khortha: [
+    "राएर स्वागत ह! का रांनी झारखंड के बारे में आओर कुछ जानना चाही ह?",
+    "मदद करी के खुशी भइल! का राएर कोनो आओर सवाल ह त हमरा के बताई।",
+    "खुशी भइल! का राएर झारखंड पर्यटन के बारे में आओर जानकारी चाही त पूछे में संकोच ना करीं।"
+  ]
         };
         return getRandomResponse(responses[language] || responses.English);
       }
       
-      // Default response for unrecognized questions
       else {
         const responses = {
           English: [
@@ -1231,7 +1427,25 @@
           Bangla: [
             "আমি নিশ্চিত নই যে আমি বুঝতে পেরেছি। আপনি কি আপনার প্রশ্নটি পুনরায় বলতে পারেন? আমি ঝাড়খণ্ডে ভ্রমণের সময়, আবহাওয়া, অনুমতি এবং দেখার জায়গা সম্পর্কে তথ্য দিয়ে সাহায্য করতে পারি।",
             "আমি ঝাড়খণ্ড পর্যটন তথ্যে বিশেষজ্ঞ। আপনি কি ভ্রমণের সময়, আবহাওয়ার অবস্থা, বা অনুমতির প্রয়োজনীয়তা সম্পর্কে জিজ্ঞাসা করতে পারেন?"
-          ]
+          ],
+          Gujarati: [
+    "મને ખાતરી નથી કે હું સમજી શક્યો છું. શું તમે કૃપા કરીને તમારો પ્રશ્ન ફરીથી કહી શકો છો? હું ઝારખંડમાં મુસાફરીના સમય, હવામાન, પરવાનગીઓ અને મુલાકાત લેવાની જગ્યાઓ વિશેની માહિતી સાથે મદદ કરી શકું છું.",
+    "હું ઝારખંડ પર્યટન માહિતીમાં વિશેષજ્ઞ છું. શું તમે મુસાફરીના સમય, હવામાનની સ્થિતિ અથવા પરવાનગીની જરૂરિયાતો વિશે પૂછી શકો છો?",
+    "હું ઝારખંડ પર્યટન પ્રશ્નો સાથે મદદ કરવા માટે અહીં છું. લોકપ્રિય સ્થળો, મુસાફરીની માહિતી અથવા હવામાનના અનુમાન વિશે પૂછવાનો પ્રયાસ કરો.",
+    "ચોક્કસ માહિતી માટે, કૃપા કરીને ઝારખંડની મુસાફરીની સ્થિતિ, હવામાન અથવા પરવાનગીની જરૂરિયાતો વિશે પૂછો. હું મદદ કરવા માટે ખુશ થઈશ!"
+  ],
+  Tamil: [
+    "நான் புரிந்து கொண்டேனா என்று எனக்கு உறுதியாக தெரியவில்லை. தயவுசெய்து உங்கள் கேள்வியை மீண்டும் சொல்ல முடியுமா? ஜார்கண்டில் பயண நேரம், வானிலை, அனுமதிகள் மற்றும் பார்க்க வேண்டிய இடங்கள் பற்றிய தகவல்களுடன் நான் உதவ முடியும்.",
+    "நான் ஜார்கண்ட் சுற்றுலா தகவலில் நிபுணத்துவம் பெற்றவன். பயண நேரம், வானிலை நிலைமைகள் அல்லது அனுமதி தேவைகள் பற்றி கேட்க முடியுமா?",
+    "ஜார்கண்ட் சுற்றுலா கேள்விகளுக்கு உதவ நான் இங்கு இருக்கிறேன். பிரபலமான இடங்கள், பயண தகவல் அல்லது வானிலை முன்னறிவிப்புகள் பற்றி கேட்க முயற்சிக்கவும்.",
+    "துல்லியமான தகவலுக்கு, ஜார்கண்டின் பயண நிலைமைகள், வானிலை அல்லது அனுமதி தேவைகள் பற்றி கேட்கவும். உதவி செய்ய நான் மகிழ்ச்சியடைவேன்!"
+  ],
+  Khortha: [
+    "हमरा के यकीन नइखे कि हम समझलीं। का रां कृपया अपन सवाल फिर स कही सकै ह? हम झारखंड में यात्रा के समय, मौसम, परमिट आ घूमे लायक जगह के बारे में जानकारी दे के मदद करी सकै ह।",
+    "हम झारखंड पर्यटन जानकारी में बिसेसज्ञ ह। का रां यात्रा के समय, मौसम के हालत, या परमिट के जरूरत के बारे में पूछी सकै ह?",
+    "हम झारखंड पर्यटन के सवाल में मदद करे खातिर इहाँ ह। लोकप्रिय जगह, यात्रा जानकारी, या मौसम के अनुमान के बारे में पूछे के कोसिस करीं।",
+    "सही जानकारी खातिर, कृपया झारखंड के यात्रा के हालत, मौसम, या परमिट के जरूरत के बारे में पूछीं। हम मदद करी के खुश होबे!"
+  ]
         };
         return getRandomResponse(responses[language] || responses.English);
       }

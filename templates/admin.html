@@ -98,152 +98,187 @@
     </div>
 
     <script>
-        const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://127.0.0.1:5000/api' : 'https://jharkhand-tourism-backend-denu.onrender.com/api';
+        // Use Supabase directly from window.supabaseClient (set up in auth.js)
+        
+        let state = {
+            guide: [],
+            transport: [],
+            activity: [],
+            package: []
+        };
+
+        async function initAdmin() {
+            const session = await getSession();
+            if (!session || session.user.email !== 'admin@jharkhandtourism.com') {
+                document.body.innerHTML = '<h1 style="color:red;text-align:center;margin-top:50px;">Access Denied. Admins Only.</h1>';
+                return;
+            }
+            await loadAllData();
+            setupRealtime();
+        }
 
         async function loadAllData() {
-            await Promise.all([loadGuideBookings(), loadTransportBookings(), loadActivityBookings(), loadPackageBookings(), loadStats()]);
+            const [gRes, tRes, aRes, pRes] = await Promise.all([
+                window.supabaseClient.from('guide_bookings').select('*').order('created_at', { ascending: false }),
+                window.supabaseClient.from('transport_bookings').select('*').order('created_at', { ascending: false }),
+                window.supabaseClient.from('activity_bookings').select('*').order('created_at', { ascending: false }),
+                window.supabaseClient.from('package_bookings').select('*').order('created_at', { ascending: false })
+            ]);
+
+            state.guide = gRes.data || [];
+            state.transport = tRes.data || [];
+            state.activity = aRes.data || [];
+            state.package = pRes.data || [];
+
+            renderAll();
         }
 
-        async function loadStats() {
-            try {
-                const response = await fetch(`${API_BASE}/admin/stats`);
-                const stats = await response.json();
-                
-                document.getElementById('guideCount').textContent = stats.total.guide;
-                document.getElementById('transportCount').textContent = stats.total.transport;
-                document.getElementById('activityCount').textContent = stats.total.activity;
-                document.getElementById('packageCount').textContent = stats.total.package || 0;
-                document.getElementById('totalCount').textContent = stats.total.guide + stats.total.transport + stats.total.activity + (stats.total.package || 0);
-                
-                // Add today's stats if they exist
-                if (stats.today) {
-                    const todayTotal = stats.today.guide + stats.today.transport + stats.today.activity + (stats.today.package || 0);
-                    if (todayTotal > 0) {
-                        const existingTodayStats = document.querySelector('.today-stats');
-                        if (existingTodayStats) existingTodayStats.remove();
-                        
-                        const todayStats = document.createElement('div');
-                        todayStats.className = 'stats today-stats';
-                        todayStats.innerHTML = `
-                            <div class="stat-card">
-                                <div class="stat-number" style="color: #e74c3c;">${stats.today.guide}</div>
-                                <div>Today's Guide Requests</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-number" style="color: #e74c3c;">${stats.today.transport}</div>
-                                <div>Today's Transport</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-number" style="color: #e74c3c;">${stats.today.activity}</div>
-                                <div>Today's Activities</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-number" style="color: #e74c3c;">${stats.today.package || 0}</div>
-                                <div>Today's Packages</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-number" style="color: #e74c3c;">${todayTotal}</div>
-                                <div>Today's Total</div>
-                            </div>
-                        `;
-                        document.querySelector('.stats').parentNode.insertBefore(todayStats, document.querySelector('.stats').nextSibling);
+        function renderAll() {
+            updateStats();
+            renderGuideBookings();
+            renderTransportBookings();
+            renderActivityBookings();
+            renderPackageBookings();
+        }
+
+        function updateStats() {
+            document.getElementById('guideCount').textContent = state.guide.length;
+            document.getElementById('transportCount').textContent = state.transport.length;
+            document.getElementById('activityCount').textContent = state.activity.length;
+            document.getElementById('packageCount').textContent = state.package.length;
+            document.getElementById('totalCount').textContent = state.guide.length + state.transport.length + state.activity.length + state.package.length;
+            
+            // Calculate today's stats
+            const todayStr = new Date().toISOString().split('T')[0];
+            const isToday = (dateStr) => dateStr && dateStr.startsWith(todayStr);
+            
+            const todayStats = {
+                guide: state.guide.filter(b => isToday(b.created_at)).length,
+                transport: state.transport.filter(b => isToday(b.created_at)).length,
+                activity: state.activity.filter(b => isToday(b.created_at)).length,
+                package: state.package.filter(b => isToday(b.created_at)).length
+            };
+            
+            const todayTotal = todayStats.guide + todayStats.transport + todayStats.activity + todayStats.package;
+            
+            const existingTodayStats = document.querySelector('.today-stats');
+            if (existingTodayStats) existingTodayStats.remove();
+            
+            if (todayTotal > 0) {
+                const todayStatsDiv = document.createElement('div');
+                todayStatsDiv.className = 'stats today-stats';
+                todayStatsDiv.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #e74c3c;">${todayStats.guide}</div>
+                        <div>Today's Guide Requests</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #e74c3c;">${todayStats.transport}</div>
+                        <div>Today's Transport</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #e74c3c;">${todayStats.activity}</div>
+                        <div>Today's Activities</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #e74c3c;">${todayStats.package}</div>
+                        <div>Today's Packages</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #e74c3c;">${todayTotal}</div>
+                        <div>Today's Total</div>
+                    </div>
+                `;
+                document.querySelector('.stats').parentNode.insertBefore(todayStatsDiv, document.querySelector('.stats').nextSibling);
+            }
+        }
+
+        function renderGuideBookings() {
+            const tbody = document.querySelector('#guideTable tbody');
+            tbody.innerHTML = state.guide.map(b => `
+                <tr>
+                    <td>${b.name}</td>
+                    <td>${b.phone}</td>
+                    <td>${b.email || 'N/A'}</td>
+                    <td>English</td>
+                    <td>${b.places || 'N/A'}</td>
+                    <td>${b.date}</td>
+                    <td>${new Date(b.created_at).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderTransportBookings() {
+            const tbody = document.querySelector('#transportTable tbody');
+            tbody.innerHTML = state.transport.map(b => `
+                <tr>
+                    <td>${b.name}</td>
+                    <td>${b.pickup_location}</td>
+                    <td>${b.destination}</td>
+                    <td>${b.vehicle_type}</td>
+                    <td>${b.date} ${b.time}</td>
+                    <td>${new Date(b.created_at).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderActivityBookings() {
+            const tbody = document.querySelector('#activityTable tbody');
+            tbody.innerHTML = state.activity.map(b => `
+                <tr>
+                    <td>${b.name}</td>
+                    <td>${b.phone}</td>
+                    <td>${b.activity}</td>
+                    <td>${b.location || 'N/A'}</td>
+                    <td>${b.participants}</td>
+                    <td>${b.date}</td>
+                    <td>${new Date(b.created_at).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPackageBookings() {
+            const tbody = document.querySelector('#packageTable tbody');
+            tbody.innerHTML = state.package.map(b => `
+                <tr>
+                    <td>${b.id}</td>
+                    <td>${b.name}</td>
+                    <td>${b.email}</td>
+                    <td>${b.phone}</td>
+                    <td>${b.package_name}</td>
+                    <td>${b.adults} / ${b.children || 0}</td>
+                    <td>${b.date}</td>
+                    <td>₹${b.amount}</td>
+                    <td>${b.payment_status}</td>
+                    <td>${b.payment_id || 'N/A'}</td>
+                    <td>${new Date(b.created_at).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function setupRealtime() {
+            const channel = window.supabaseClient.channel('admin-updates');
+            
+            ['guide_bookings', 'transport_bookings', 'activity_bookings', 'package_bookings'].forEach(table => {
+                channel.on(
+                    'postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: table },
+                    (payload) => {
+                        console.log(`New insert on ${table}:`, payload);
+                        const type = table.split('_')[0]; // 'guide', 'transport', 'activity', 'package'
+                        state[type].unshift(payload.new);
+                        renderAll();
                     }
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
+                );
+            });
+            
+            channel.subscribe();
         }
 
-        async function loadGuideBookings() {
-            try {
-                const response = await fetch(`${API_BASE}/admin/guide-bookings`);
-                const bookings = await response.json();
-                const tbody = document.querySelector('#guideTable tbody');
-                tbody.innerHTML = bookings.map(b => `
-                    <tr>
-                        <td>${b.name}</td>
-                        <td>${b.phone}</td>
-                        <td>${b.email || 'N/A'}</td>
-                        <td>English</td>
-                        <td>${b.places || 'N/A'}</td>
-                        <td>${b.date}</td>
-                        <td>${new Date(b.created_at).toLocaleDateString()}</td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading guide bookings:', error);
-            }
-        }
-
-        async function loadTransportBookings() {
-            try {
-                const response = await fetch(`${API_BASE}/admin/transport-bookings`);
-                const bookings = await response.json();
-                const tbody = document.querySelector('#transportTable tbody');
-                tbody.innerHTML = bookings.map(b => `
-                    <tr>
-                        <td>${b.name}</td>
-                        <td>${b.pickup_location}</td>
-                        <td>${b.destination}</td>
-                        <td>${b.vehicle_type}</td>
-                        <td>${b.date} ${b.time}</td>
-                        <td>${new Date(b.created_at).toLocaleDateString()}</td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading transport bookings:', error);
-            }
-        }
-
-        async function loadActivityBookings() {
-            try {
-                const response = await fetch(`${API_BASE}/admin/activity-bookings`);
-                const bookings = await response.json();
-                const tbody = document.querySelector('#activityTable tbody');
-                tbody.innerHTML = bookings.map(b => `
-                    <tr>
-                        <td>${b.name}</td>
-                        <td>${b.phone}</td>
-                        <td>${b.activity}</td>
-                        <td>${b.location || 'N/A'}</td>
-                        <td>${b.participants}</td>
-                        <td>${b.date}</td>
-                        <td>${new Date(b.created_at).toLocaleDateString()}</td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading activity bookings:', error);
-            }
-        }
-
-        async function loadPackageBookings() {
-            try {
-                const response = await fetch(`${API_BASE}/admin/package-bookings`);
-                const bookings = await response.json();
-                const tbody = document.querySelector('#packageTable tbody');
-                tbody.innerHTML = bookings.map(b => `
-                    <tr>
-                        <td>${b.id}</td>
-                        <td>${b.name}</td>
-                        <td>${b.email}</td>
-                        <td>${b.phone}</td>
-                        <td>${b.package_name}</td>
-                        <td>${b.adults} / ${b.children}</td>
-                        <td>${b.date}</td>
-                        <td>?${b.amount}</td>
-                        <td>${b.payment_status}</td>
-                        <td>${b.payment_id || 'N/A'}</td>
-                        <td>${new Date(b.created_at).toLocaleDateString()}</td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading package bookings:', error);
-            }
-        }
-
-        // Load all data on page load
-        loadAllData();
-        setInterval(loadAllData, 10000);
+        // Initialize Admin Dashboard
+        window.addEventListener('load', () => {
+            setTimeout(initAdmin, 1000); // small delay to ensure session is loaded
+        });
     </script>
 </body>
 </html>

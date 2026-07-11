@@ -720,16 +720,13 @@
   </footer>
 
   <script>
-    // API Base URL
-    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      ? 'http://127.0.0.1:5000/api'
-      : 'https://jharkhand-tourism-backend-denu.onrender.com/api';
+    // API Base URL removed
 
     // -------- Featured Places ----------
     async function loadPlaces() {
       try {
-        const response = await fetch(`${API_BASE}/places`);
-        const places = await response.json();
+        const { data: places, error } = await window.supabaseClient.from('places').select('*');
+        if (error || !places || places.length === 0) throw error || new Error('No places found');
         
         const grid = document.getElementById('placeGrid');
         grid.innerHTML = places.map(p => `
@@ -832,16 +829,31 @@
         return; 
       }
       
-      try {
-        const response = await fetch(`${API_BASE}/book-guide`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(data)
-        });
+        const session = await getSession();
+        if (!session) {
+          sessionStorage.setItem('redirectAfterLogin', window.location.href);
+          window.location.href = 'templates/login.html';
+          return;
+        }
+
+        const mapped_data = {
+            name: data.name,
+            email: session.user.email || data.email,
+            phone: data.phone,
+            places: data.places.join(', '),
+            date: data.date,
+            duration: 1,
+            group_size: 1,
+            special_requirements: `Language: ${data.language}`,
+            user_id: session.user.id
+        };
+
+        const { error } = await window.supabaseClient.from('guide_bookings').insert(mapped_data);
         
-        const result = await response.json();
-        document.getElementById('gMsg').textContent = result.message;
-        document.getElementById('gMsg').style.color = result.success ? "#9fe29f" : "#ffaaaa";
+        if (error) throw error;
+
+        document.getElementById('gMsg').textContent = "Guide booking submitted successfully!";
+        document.getElementById('gMsg').style.color = "#9fe29f";
       } catch (error) {
         document.getElementById('gMsg').textContent = "Network error. Please check connection.";
         document.getElementById('gMsg').style.color = "#ffaaaa";
@@ -863,16 +875,40 @@
         return; 
       }
       
-      try {
-        const response = await fetch(`${API_BASE}/book-transport`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(data)
-        });
+        const session = await getSession();
+        if (!session) {
+          sessionStorage.setItem('redirectAfterLogin', window.location.href);
+          window.location.href = 'templates/login.html';
+          return;
+        }
+
+        let d_date = data.when;
+        let d_time = '10:00:00';
+        if (d_date.includes('T')) {
+           const parts = d_date.split('T');
+           d_date = parts[0];
+           d_time = parts[1];
+        }
+
+        const mapped_data = {
+            name: data.name,
+            email: session.user.email,
+            phone: '0000000000',
+            pickup_location: data.from,
+            destination: data.to,
+            date: d_date,
+            time: d_time,
+            passengers: 1,
+            vehicle_type: data.vehicle,
+            user_id: session.user.id
+        };
+
+        const { error } = await window.supabaseClient.from('transport_bookings').insert(mapped_data);
         
-        const result = await response.json();
-        document.getElementById('tMsg').textContent = result.message;
-        document.getElementById('tMsg').style.color = result.success ? "#9fe29f" : "#ffaaaa";
+        if (error) throw error;
+
+        document.getElementById('tMsg').textContent = "Transport booking submitted successfully!";
+        document.getElementById('tMsg').style.color = "#9fe29f";
       } catch (error) {
         document.getElementById('tMsg').textContent = "Network error. Please check connection.";
         document.getElementById('tMsg').style.color = "#ffaaaa";
@@ -898,19 +934,34 @@
         return; 
       }
       
-      try {
-        const response = await fetch(`${API_BASE}/book-activity`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(data)
-        });
+        const session = await getSession();
+        if (!session) {
+          sessionStorage.setItem('redirectAfterLogin', window.location.href);
+          window.location.href = 'templates/login.html';
+          return;
+        }
+
+        const mapped_data = {
+            name: data.name,
+            phone: data.phone,
+            email: data.email || session.user.email,
+            activity: data.activity,
+            location: data.location,
+            participants: parseInt(data.participants) || 1,
+            date: data.date,
+            experience_level: data.requirements,
+            user_id: session.user.id
+        };
+
+        const { error } = await window.supabaseClient.from('activity_bookings').insert(mapped_data);
         
-        const result = await response.json();
-        document.getElementById('aMsg').textContent = result.message;
-        document.getElementById('aMsg').style.color = result.success ? "#9fe29f" : "#ffaaaa";
+        if (error) throw error;
+
+        document.getElementById('aMsg').textContent = "Activity booking submitted successfully!";
+        document.getElementById('aMsg').style.color = "#9fe29f";
         
         // Clear form on success
-        if (result.success) {
+        if (true) {
           document.getElementById('aName').value = '';
           document.getElementById('aPhone').value = '';
           document.getElementById('aEmail').value = '';

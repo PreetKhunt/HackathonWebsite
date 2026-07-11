@@ -2,36 +2,15 @@
 const SUPABASE_URL = "https://jbiovrijnxrjmpkawlgx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpiaW92cmlqbnhyam1wa2F3bGd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2OTYzNTksImV4cCI6MjA5OTI3MjM1OX0.yONZqb3vxkv1i-riYgn_qSdt0Zgt4DHVPlBV8vf1AUU";
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// Helper to get current session
+window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabaseClient;// Helper to get current session
 async function getSession() {
     const { data, error } = await supabaseClient.auth.getSession();
     if (error) console.error("Error getting session:", error);
     return data.session;
 }
 
-// Intercept fetch requests to add Authorization header automatically
-const originalFetch = window.fetch;
-window.fetch = async function() {
-    let [resource, config] = arguments;
-    
-    // Check if the request is destined for our backend API
-    const isApiRequest = typeof resource === 'string' && (
-        resource.startsWith('/api/') || 
-        (window.API_BASE && resource.startsWith(window.API_BASE))
-    );
-    
-    if (isApiRequest) {
-        const session = await getSession();
-        if (session) {
-            config = config || {};
-            config.headers = config.headers || {};
-            config.headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
-    }
-    return originalFetch(resource, config);
-};
+// fetch interceptor removed as there is no backend API anymore
 
 // Check auth and redirect if not logged in (used on protected pages)
 async function requireAuth() {
@@ -136,6 +115,4 @@ window.addEventListener('load', async () => {
         console.error("OAuth callback/session error:", error);
     }
 });
-window.API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ? 'http://127.0.0.1:5000/api'
-  : 'https://jharkhand-tourism-backend-denu.onrender.com/api';
+// API_BASE removed as there is no backend
