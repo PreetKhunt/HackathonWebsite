@@ -111,7 +111,7 @@
 
         async function initAdmin() {
             const session = (await window.supabaseClient.auth.getSession()).data.session;
-            if (!session || session.user.email !== 'admin@jharkhandtourism.com') {
+            if (!session || session.user.email !== 'khuntpreet12@gmail.com') {
                 document.body.innerHTML = '<h1 style="color:red;text-align:center;margin-top:50px;">Access Denied. Admins Only.</h1>';
                 return;
             }
@@ -121,11 +121,17 @@
 
         async function loadAllData() {
             try {
+                // Ensure auth headers are sent since admin endpoints are protected now
+                let hdrs = {};
+                if (window.getAuthHeaders) {
+                    hdrs = await window.getAuthHeaders();
+                }
+
                 const [gRes, tRes, aRes, pRes] = await Promise.all([
-                    fetch(`${window.API_BASE}/admin/guide-bookings`),
-                    fetch(`${window.API_BASE}/admin/transport-bookings`),
-                    fetch(`${window.API_BASE}/admin/activity-bookings`),
-                    fetch(`${window.API_BASE}/admin/package-bookings`)
+                    fetch(`${window.API_BASE}/admin/guide-bookings`, { headers: hdrs }),
+                    fetch(`${window.API_BASE}/admin/transport-bookings`, { headers: hdrs }),
+                    fetch(`${window.API_BASE}/admin/activity-bookings`, { headers: hdrs }),
+                    fetch(`${window.API_BASE}/admin/package-bookings`, { headers: hdrs })
                 ]);
                 
                 state.guide = gRes.ok ? await gRes.json() : [];

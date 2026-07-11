@@ -417,15 +417,28 @@ def get_user_bookings():
         return no_cache_jsonify({'guides': [], 'transports': [], 'activities': [], 'packages': []})
 
 
+def require_admin(f):
+    """Decorator: verifies auth and ensures user is the admin."""
+    @wraps(f)
+    @require_auth
+    def decorated(*args, **kwargs):
+        if not g.user or getattr(g.user, 'email', '') != 'khuntpreet12@gmail.com':
+            print(f"[AUTH] Returning 403 (Forbidden) for {request.path}")
+            return jsonify({'success': False, 'message': 'Access Denied. Admins Only.'}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+
 # ============================================================
 #  ADMIN ROUTES
 # ============================================================
 
 @app.route('/api/admin/guide-bookings')
+@require_admin
 def get_guide_bookings():
-    if supabase:
+    if supabase_admin:
         try:
-            result = supabase.table('guide_bookings').select('*').order('created_at', desc=True).execute()
+            result = supabase_admin.table('guide_bookings').select('*').order('created_at', desc=True).execute()
             return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"[ADMIN] Error fetching guide bookings: {e}")
@@ -433,10 +446,11 @@ def get_guide_bookings():
 
 
 @app.route('/api/admin/transport-bookings')
+@require_admin
 def get_transport_bookings():
-    if supabase:
+    if supabase_admin:
         try:
-            result = supabase.table('transport_bookings').select('*').order('created_at', desc=True).execute()
+            result = supabase_admin.table('transport_bookings').select('*').order('created_at', desc=True).execute()
             return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"[ADMIN] Error fetching transport bookings: {e}")
@@ -444,10 +458,11 @@ def get_transport_bookings():
 
 
 @app.route('/api/admin/activity-bookings')
+@require_admin
 def get_activity_bookings():
-    if supabase:
+    if supabase_admin:
         try:
-            result = supabase.table('activity_bookings').select('*').order('created_at', desc=True).execute()
+            result = supabase_admin.table('activity_bookings').select('*').order('created_at', desc=True).execute()
             return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"[ADMIN] Error fetching activity bookings: {e}")
@@ -455,10 +470,11 @@ def get_activity_bookings():
 
 
 @app.route('/api/admin/package-bookings')
+@require_admin
 def get_package_bookings():
-    if supabase:
+    if supabase_admin:
         try:
-            result = supabase.table('package_bookings').select('*').order('created_at', desc=True).execute()
+            result = supabase_admin.table('package_bookings').select('*').order('created_at', desc=True).execute()
             return no_cache_jsonify(result.data or [])
         except Exception as e:
             print(f"[ADMIN] Error fetching package bookings: {e}")
@@ -466,10 +482,11 @@ def get_package_bookings():
 
 
 @app.route('/api/admin/stats')
+@require_admin
 def get_stats():
-    if supabase:
+    if supabase_admin:
         try:
-            guide_total = supabase.table('guide_bookings').select('id', count='exact').execute()
+            guide_total = supabase_admin.table('guide_bookings').select('id', count='exact').execute()
             transport_total = supabase.table('transport_bookings').select('id', count='exact').execute()
             activity_total = supabase.table('activity_bookings').select('id', count='exact').execute()
             package_total = supabase.table('package_bookings').select('id', count='exact').execute()
