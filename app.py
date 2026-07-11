@@ -62,7 +62,18 @@ def get_current_user():
         try:
             res = supabase.auth.get_user(jwt=token)
             print(f"Supabase auth verification result: {res.user if hasattr(res, 'user') else res}")
-            return res.user if hasattr(res, 'user') else res
+            
+            user_obj = res.user if hasattr(res, 'user') else res
+            
+            # If user_obj is a dictionary (older sdk versions), wrap it
+            if isinstance(user_obj, dict):
+                class DictWrapper:
+                    def __init__(self, d):
+                        self.id = d.get('id')
+                        self.email = d.get('email')
+                return DictWrapper(user_obj)
+                
+            return user_obj
         except Exception as e:
             print(f"Exact reason for 401 - Supabase Auth Error: {e}")
     else:
