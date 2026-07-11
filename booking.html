@@ -237,16 +237,11 @@
                 btn.disabled = true;
 
                 // Save to backend API
-                getSession().then(session => {
-                    const headers = { 'Content-Type': 'application/json' };
-                    if (session) {
-                        headers['Authorization'] = `Bearer ${session.access_token}`;
-                    }
-                    fetch(`${window.API_BASE}/book-package`, {
-                        method: 'POST',
-                        headers: headers,
-                        body: JSON.stringify(formDetails)
-                    })
+                fetch(`${window.API_BASE}/book-package`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formDetails)
+                })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {

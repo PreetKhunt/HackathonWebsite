@@ -159,6 +159,8 @@
   </style>
 </head>
 <body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/auth.js"></script>
   <header class="nav">
     <div class="container nav-inner">
       <div class="brand">
@@ -831,14 +833,9 @@
       }
       
       try {
-        const session = await getSession();
-        const headers = {'Content-Type': 'application/json'};
-        if (session) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
         const response = await fetch(`${API_BASE}/book-guide`, {
           method: 'POST',
-          headers: headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
         
@@ -874,14 +871,9 @@
       }
       
       try {
-        const sessionRes = await getSession();
-        const headers = {'Content-Type': 'application/json'};
-        if (sessionRes) {
-            headers['Authorization'] = `Bearer ${sessionRes.access_token}`;
-        }
         const response = await fetch(`${API_BASE}/book-transport`, {
           method: 'POST',
-          headers: headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
         
@@ -914,14 +906,9 @@
       }
       
       try {
-        const sessionAct = await getSession();
-        const headers = {'Content-Type': 'application/json'};
-        if (sessionAct) {
-            headers['Authorization'] = `Bearer ${sessionAct.access_token}`;
-        }
         const response = await fetch(`${API_BASE}/book-activity`, {
           method: 'POST',
-          headers: headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
         

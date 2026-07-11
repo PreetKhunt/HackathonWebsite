@@ -3,6 +3,7 @@ const SUPABASE_URL = "https://jbiovrijnxrjmpkawlgx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpiaW92cmlqbnhyam1wa2F3bGd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2OTYzNTksImV4cCI6MjA5OTI3MjM1OX0.yONZqb3vxkv1i-riYgn_qSdt0Zgt4DHVPlBV8vf1AUU";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window.supabaseClient = supabaseClient;
 
 // Helper to get current session
 async function getSession() {
@@ -10,6 +11,7 @@ async function getSession() {
     if (error) console.error("Error getting session:", error);
     return data.session;
 }
+window.getSession = getSession;
 
 // Intercept fetch requests to add Authorization header automatically
 const originalFetch = window.fetch;
