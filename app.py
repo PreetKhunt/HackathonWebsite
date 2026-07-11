@@ -20,6 +20,9 @@ app.config['SECRET_KEY'] = 'dev-secret-key'
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 
+print(f"Backend SUPABASE_URL: {SUPABASE_URL}")
+print(f"Backend SUPABASE_KEY: {SUPABASE_KEY[:10]}...{SUPABASE_KEY[-10:] if SUPABASE_KEY and len(SUPABASE_KEY) > 20 else ''}")
+
 # Razorpay configuration
 RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
 RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
@@ -49,15 +52,21 @@ FALLBACK_PLACES = [
 
 def get_current_user():
     auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
+    print(f"Incoming Authorization header: {auth_header}")
+    if not auth_header or not auth_header.startswith('Bearer'):
+        print("Missing or invalid Authorization header format (expected 'Bearer <token>')")
         return None
-    token = auth_header.replace('Bearer ', '')
+    token = auth_header.split(' ')[1].strip() if len(auth_header.split(' ')) > 1 else auth_header.replace('Bearer', '').strip()
+    print(f"Extracted token: {token[:10]}...{token[-10:] if len(token) > 20 else ''}")
     if supabase:
         try:
-            res = supabase.auth.get_user(token)
-            return res.user
+            res = supabase.auth.get_user(jwt=token)
+            print(f"Supabase auth verification result: {res.user if hasattr(res, 'user') else res}")
+            return res.user if hasattr(res, 'user') else res
         except Exception as e:
-            print(f"Auth error: {e}")
+            print(f"Exact reason for 401 - Supabase Auth Error: {e}")
+    else:
+        print("Exact reason for 401 - Supabase client is not initialized")
     return None
 
 def require_auth(f):
