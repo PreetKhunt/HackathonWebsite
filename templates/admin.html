@@ -120,17 +120,21 @@
         }
 
         async function loadAllData() {
-            const [gRes, tRes, aRes, pRes] = await Promise.all([
-                window.supabaseClient.from('guide_bookings').select('*').order('created_at', { ascending: false }),
-                window.supabaseClient.from('transport_bookings').select('*').order('created_at', { ascending: false }),
-                window.supabaseClient.from('activity_bookings').select('*').order('created_at', { ascending: false }),
-                window.supabaseClient.from('package_bookings').select('*').order('created_at', { ascending: false })
-            ]);
-
-            state.guide = gRes.data || [];
-            state.transport = tRes.data || [];
-            state.activity = aRes.data || [];
-            state.package = pRes.data || [];
+            try {
+                const [gRes, tRes, aRes, pRes] = await Promise.all([
+                    fetch(`${window.API_BASE}/admin/guide-bookings`),
+                    fetch(`${window.API_BASE}/admin/transport-bookings`),
+                    fetch(`${window.API_BASE}/admin/activity-bookings`),
+                    fetch(`${window.API_BASE}/admin/package-bookings`)
+                ]);
+                
+                state.guide = gRes.ok ? await gRes.json() : [];
+                state.transport = tRes.ok ? await tRes.json() : [];
+                state.activity = aRes.ok ? await aRes.json() : [];
+                state.package = pRes.ok ? await pRes.json() : [];
+            } catch (e) {
+                console.error("Error fetching admin data:", e);
+            }
 
             renderAll();
         }
