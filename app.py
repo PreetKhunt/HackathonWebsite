@@ -1,9 +1,10 @@
-from flask import Flask, send_file, request, jsonify, render_template, make_response
+from flask import Flask, send_file, request, jsonify, render_template, make_response, g
 from flask_cors import CORS
 from functools import wraps
 import os
 from datetime import datetime
 import json
+
 try:
     from supabase import create_client, Client
     from dotenv import load_dotenv
@@ -13,7 +14,7 @@ except ImportError:
     create_client = None
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 app.config['SECRET_KEY'] = 'dev-secret-key'
 
 # Supabase configuration
@@ -21,7 +22,7 @@ SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 
 print(f"Backend SUPABASE_URL: {SUPABASE_URL}")
-print(f"Backend SUPABASE_KEY: {SUPABASE_KEY[:10]}...{SUPABASE_KEY[-10:] if SUPABASE_KEY and len(SUPABASE_KEY) > 20 else ''}")
+print(f"Backend SUPABASE_KEY: {SUPABASE_KEY[:10] if SUPABASE_KEY else 'NOT SET'}...{SUPABASE_KEY[-10:] if SUPABASE_KEY and len(SUPABASE_KEY) > 20 else ''}")
 
 # Razorpay configuration
 RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
@@ -32,63 +33,103 @@ supabase = None
 if create_client and SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        print("Connected to Supabase")
+        print("Connected to Supabase successfully")
     except Exception as e:
         print(f"Supabase connection failed: {e}")
-        print("Using fallback data")
 else:
-    print("Using fallback data (no Supabase config)")
+    print("Supabase not configured - check SUPABASE_URL and SUPABASE_ANON_KEY env vars")
 
-# Fallback data
-FALLBACK_PLACES = [
-    {"name":"Dassam Falls","tag":"Waterfall","image_url":"https://dynamic-media-cdn.tripadvisor.com/media/photo-o/19/fa/bd/6e/a-full-view-of-the-falls.jpg?w=900&h=500&s=1","description":"A spectacular cascade on the Kanchi River surrounded by sal forests."},
-    {"name":"Hundru Falls","tag":"Waterfall","image_url":"https://thumbs.dreamstime.com/b/hundru-waterfalls-jharkhand-287522583.jpg","description":"Monsoon-favorite plunge pool and scenic rock formations."},
-    {"name":"Betla National Park","tag":"Wildlife","image_url":"https://superbcollections.com/wp-content/uploads/2023/08/Betla-National-Park.jpeg","description":"Forests, elephants, and the ruins of Palamu Fort—Jharkhand's classic safari."},
-    {"name":"Netarhat","tag":"Hill Station","image_url":"https://thumbs.dreamstime.com/b/netarhat-jharkhand-indian-view-pictures-taken-vishal-singh-170710563.jpg","description":"'Queen of Chotanagpur'—famed for sunrise/sunset points and pine avenues."}
-]
 
-# Using fallback data only
-
+# ============================================================
+#  AUTHENTICATION  - single call per request, stored in g
+# ============================================================
 
 def get_current_user():
-    auth_header = request.headers.get('Authorization')
-    print(f"Incoming Authorization header: {auth_header}")
-    if not auth_header or not auth_header.startswith('Bearer'):
-        print("Missing or invalid Authorization header format (expected 'Bearer <token>')")
+    """
+    Verify the Bearer token in the Authorization header against Supabase Auth.
+    Result is cached in flask.g so it is only called once per request.
+    Returns the Supabase User object, or None if verification fails.
+    """
+    # Cache result so we never call Supabase Auth twice per request
+    if hasattr(g, '_cached_user'):
+        return g._cached_user
+
+    auth_header = request.headers.get('Authorization', '')
+    print(f"[AUTH] Incoming Authorization header: '{auth_header[:30]}...' (length={len(auth_header)})")
+
+    if not auth_header:
+        print("[AUTH] FAIL: No Authorization header present")
+        g._cached_user = None
         return None
-    token = auth_header.split(' ')[1].strip() if len(auth_header.split(' ')) > 1 else auth_header.replace('Bearer', '').strip()
-    print(f"Extracted token: {token[:10]}...{token[-10:] if len(token) > 20 else ''}")
-    if supabase:
-        try:
-            res = supabase.auth.get_user(jwt=token)
-            print(f"Supabase auth verification result: {res.user if hasattr(res, 'user') else res}")
-            
-            user_obj = res.user if hasattr(res, 'user') else res
-            
-            # If user_obj is a dictionary (older sdk versions), wrap it
-            if isinstance(user_obj, dict):
-                class DictWrapper:
-                    def __init__(self, d):
-                        self.id = d.get('id')
-                        self.email = d.get('email')
-                return DictWrapper(user_obj)
-                
-            return user_obj
-        except Exception as e:
-            print(f"Exact reason for 401 - Supabase Auth Error: {e}")
-    else:
-        print("Exact reason for 401 - Supabase client is not initialized")
-    return None
+
+    if not auth_header.startswith('Bearer '):
+        print(f"[AUTH] FAIL: Header does not start with 'Bearer '. Got: '{auth_header[:20]}'")
+        g._cached_user = None
+        return None
+
+    token = auth_header[7:].strip()   # Safely strip 'Bearer '
+
+    if not token:
+        print("[AUTH] FAIL: Token is empty after stripping 'Bearer '")
+        g._cached_user = None
+        return None
+
+    print(f"[AUTH] Token extracted (length={len(token)}): {token[:12]}...{token[-8:]}")
+
+    # Validate looks like a JWT (3 dot-separated segments)
+    segments = token.split('.')
+    if len(segments) != 3:
+        print(f"[AUTH] FAIL: Token has {len(segments)} segments, expected 3. Not a valid JWT.")
+        g._cached_user = None
+        return None
+
+    if not supabase:
+        print("[AUTH] FAIL: Supabase client not initialized (check env vars)")
+        g._cached_user = None
+        return None
+
+    try:
+        print("[AUTH] Calling supabase.auth.get_user(jwt=token)...")
+        res = supabase.auth.get_user(jwt=token)
+
+        if res is None:
+            print("[AUTH] FAIL: supabase.auth.get_user() returned None")
+            g._cached_user = None
+            return None
+
+        user = getattr(res, 'user', None)
+
+        if user is None:
+            print(f"[AUTH] FAIL: res.user is None. Full response: {res}")
+            g._cached_user = None
+            return None
+
+        print(f"[AUTH] SUCCESS: user.id={user.id}, user.email={user.email}")
+        g._cached_user = user
+        return user
+
+    except Exception as e:
+        print(f"[AUTH] FAIL: Supabase auth verification raised exception: {type(e).__name__}: {e}")
+        g._cached_user = None
+        return None
+
 
 def require_auth(f):
+    """Decorator: verifies auth once, stores user in g.user, passes to handler."""
     @wraps(f)
     def decorated(*args, **kwargs):
         user = get_current_user()
         if not user:
+            print(f"[AUTH] Returning 401 for {request.path}")
             return jsonify({'success': False, 'message': 'Unauthorized. Please log in.'}), 401
+        g.user = user
         return f(*args, **kwargs)
     return decorated
 
+
+# ============================================================
+#  PAGE ROUTES
+# ============================================================
 
 @app.route('/auth.js')
 def serve_auth():
@@ -110,210 +151,228 @@ def login_page():
 def signup_page():
     return render_template('signup.html')
 
+@app.route('/profile')
+def profile_page():
+    return render_template('profile.html')
+
+@app.route('/admin')
+def admin_dashboard():
+    return render_template('admin.html')
+
+@app.route('/booking')
+def booking_page():
+    return render_template('booking.html')
+
+@app.route('/success')
+def success_page():
+    return send_file('success.html')
+
 @app.route('/test')
 def test_page():
     return render_template('test.html')
 
+
+# ============================================================
+#  BOOKING ROUTES
+# ============================================================
+
 @app.route('/api/book-guide', methods=['POST'])
 @require_auth
 def book_guide():
+    user = g.user   # Set by require_auth, never None here
     data = request.json or {}
-    user = get_current_user()
-    
-    places_str = data.get('place', data.get('places', ''))
-    if isinstance(places_str, list): places_str = ', '.join(places_str)
 
-    booking_data = {
-        'user_id': user.id,
+    places_str = data.get('place', data.get('places', ''))
+    if isinstance(places_str, list):
+        places_str = ', '.join(places_str)
+
+    mapped_data = {
+        'user_id': str(user.id),
         'name': data.get('name', 'Guest'),
-        'email': getattr(user, 'email', data.get('email', 'guest@example.com')),
+        'email': data.get('email') or getattr(user, 'email', 'unknown@email.com'),
         'phone': data.get('phone', '0000000000'),
         'places': places_str,
         'date': data.get('date', '2025-01-01'),
-        'duration': 1,
-        'group_size': 1,
-        'status': 'pending',
-        'payment_status': 'pending'
+        'duration': int(data.get('duration', 1)),
+        'group_size': int(data.get('group_size', 1)),
+        'special_requirements': f"Language: {data.get('lang', data.get('language', ''))}",
     }
-    
-    if supabase:
-        print(f"Incoming guide booking JSON: {booking_data}")
-        mapped_data = {
-            'name': booking_data.get('name', 'Unknown'),
-            'email': booking_data.get('email') or (user.email if user else 'unknown@email.com'),
-            'phone': booking_data.get('phone', '0000000000'),
-            'places': booking_data.get('places', ''),
-            'date': booking_data.get('date'),
-            'duration': 1,
-            'group_size': 1,
-            'special_requirements': f"Language: {data.get('lang', data.get('language', ''))}",
-            'user_id': user.id
-        }
-        print(f"Mapped guide booking data: {mapped_data}")
-        try:
-            res = supabase.table('guide_bookings').insert(mapped_data).execute()
-            print(f"Supabase insert response: {res.data}")
-            return jsonify({'success': True, 'message': 'Guide booking submitted'})
-        except Exception as e:
-            error_msg = str(e)
-            print(f"Supabase insert failed for guide_bookings: {error_msg}")
-            return jsonify({'success': False, 'error': error_msg}), 500
-    return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+
+    print(f"[GUIDE] Inserting: {json.dumps(mapped_data, default=str)}")
+
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+
+    try:
+        res = supabase.table('guide_bookings').insert(mapped_data).execute()
+        print(f"[GUIDE] Insert response: {res.data}")
+        return jsonify({'success': True, 'message': 'Guide booking submitted successfully'})
+    except Exception as e:
+        print(f"[GUIDE] Insert FAILED: {type(e).__name__}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/book-transport', methods=['POST'])
 @require_auth
 def book_transport():
+    user = g.user
     data = request.json or {}
-    user = get_current_user()
-    
-    datetime_str = data.get('when', '2025-01-01T10:00')
-    if 'T' in datetime_str:
-        d_date, d_time = datetime_str.split('T')
-    else:
-        d_date, d_time = datetime_str, '10:00:00'
 
-    booking_data = {
-        'user_id': user.id,
+    datetime_str = data.get('when', '2025-01-01T10:00')
+    if 'T' in str(datetime_str):
+        parts = datetime_str.split('T')
+        d_date, d_time = parts[0], parts[1] if len(parts) > 1 else '10:00'
+    else:
+        d_date, d_time = datetime_str, '10:00'
+
+    mapped_data = {
+        'user_id': str(user.id),
         'name': data.get('name', 'Guest'),
-        'email': getattr(user, 'email', data.get('email', 'guest@example.com')),
+        'email': data.get('email') or getattr(user, 'email', 'unknown@email.com'),
         'phone': data.get('phone', '0000000000'),
         'pickup_location': data.get('from', ''),
         'destination': data.get('to', ''),
         'date': d_date,
         'time': d_time,
-        'passengers': 1,
-        'vehicle_type': data.get('vehicle', 'sedan'),
-        'status': 'pending',
-        'payment_status': 'pending'
+        'passengers': int(data.get('passengers', 1)),
+        'vehicle_type': data.get('vehicle', 'Sedan'),
     }
 
-    if supabase:
-        print(f"Incoming transport booking JSON: {booking_data}")
-        mapped_data = {
-            'name': booking_data.get('name', 'Unknown'),
-            'email': user.email if user else 'unknown@email.com',
-            'phone': data.get('phone', booking_data.get('phone', '0000000000')),
-            'pickup_location': booking_data.get('pickup_location', data.get('from', 'Unknown')),
-            'destination': booking_data.get('destination', data.get('to', 'Unknown')),
-            'date': d_date,
-            'time': d_time,
-            'passengers': 1,
-            'vehicle_type': booking_data.get('vehicle_type', data.get('vehicle', 'Sedan')),
-            'user_id': user.id
-        }
-        print(f"Mapped transport booking data: {mapped_data}")
-        try:
-            res = supabase.table('transport_bookings').insert(mapped_data).execute()
-            print(f"Supabase insert response: {res.data}")
-            return jsonify({'success': True, 'message': 'Transport booking submitted'})
-        except Exception as e:
-            error_msg = str(e)
-            print(f"Supabase insert failed for transport_bookings: {error_msg}")
-            return jsonify({'success': False, 'error': error_msg}), 500
-    return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+    print(f"[TRANSPORT] Inserting: {json.dumps(mapped_data, default=str)}")
+
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+
+    try:
+        res = supabase.table('transport_bookings').insert(mapped_data).execute()
+        print(f"[TRANSPORT] Insert response: {res.data}")
+        return jsonify({'success': True, 'message': 'Transport booking submitted successfully'})
+    except Exception as e:
+        print(f"[TRANSPORT] Insert FAILED: {type(e).__name__}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/book-activity', methods=['POST'])
 @require_auth
 def book_activity():
+    user = g.user
     data = request.json or {}
-    user = get_current_user()
-    
-    booking_data = {
-        'user_id': user.id,
+
+    mapped_data = {
+        'user_id': str(user.id),
         'name': data.get('name', 'Guest'),
-        'email': getattr(user, 'email', data.get('email', 'guest@example.com')),
+        'email': data.get('email') or getattr(user, 'email', 'unknown@email.com'),
         'phone': data.get('phone', '0000000000'),
-        'activity': data.get('activity', ''),
+        'activity': data.get('activity', 'General'),
         'location': data.get('location', ''),
         'date': data.get('date', '2025-01-01'),
         'participants': int(data.get('participants') or 1),
-        'experience_level': 'Not specified',
-        'status': 'pending',
-        'payment_status': 'pending'
+        'experience_level': data.get('requirements', ''),
     }
 
-    if supabase:
-        print(f"Incoming activity booking JSON: {booking_data}")
-        mapped_data = {
-            'name': booking_data.get('name', 'Unknown'),
-            'phone': booking_data.get('phone', '0000000000'),
-            'email': booking_data.get('email') or (user.email if user else 'unknown@email.com'),
-            'activity': booking_data.get('activity', 'General'),
-            'location': booking_data.get('location', 'Unknown'),
-            'participants': int(booking_data.get('participants') or 1),
-            'date': booking_data.get('date'),
-            'experience_level': booking_data.get('requirements', ''),
-            'user_id': user.id
-        }
-        print(f"Mapped activity booking data: {mapped_data}")
-        try:
-            res = supabase.table('activity_bookings').insert(mapped_data).execute()
-            print(f"Supabase insert response: {res.data}")
-            return jsonify({'success': True, 'message': 'Activity booking submitted'})
-        except Exception as e:
-            error_msg = str(e)
-            print(f"Supabase insert failed for activity_bookings: {error_msg}")
-            return jsonify({'success': False, 'error': error_msg}), 500
-    return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+    print(f"[ACTIVITY] Inserting: {json.dumps(mapped_data, default=str)}")
+
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+
+    try:
+        res = supabase.table('activity_bookings').insert(mapped_data).execute()
+        print(f"[ACTIVITY] Insert response: {res.data}")
+        return jsonify({'success': True, 'message': 'Activity booking submitted successfully'})
+    except Exception as e:
+        print(f"[ACTIVITY] Insert FAILED: {type(e).__name__}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/book-package', methods=['POST'])
 @require_auth
 def book_package():
+    user = g.user
     data = request.json or {}
-    user = get_current_user()
-    data['user_id'] = user.id
-    
-    # Required fields validation (optional but good practice)
+
     required_fields = ['name', 'email', 'phone', 'package_name', 'date', 'amount', 'payment_id', 'payment_status']
     for field in required_fields:
         if field not in data:
             return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
 
-    if supabase:
-        print(f"Incoming package booking JSON: {data}")
-        mapped_data = data.copy()
-        mapped_data['user_id'] = user.id if user else None
-        print(f"Mapped package booking data: {mapped_data}")
-        try:
-            result = supabase.table('package_bookings').insert(mapped_data).execute()
-            print(f"Supabase insert response: {result.data}")
-            return jsonify({'success': True, 'message': 'Package booking submitted successfully', 'id': result.data[0]['id'] if result.data else None})
-        except Exception as e:
-            error_msg = str(e)
-            print(f"Supabase insert failed for package_bookings: {error_msg}")
-            return jsonify({'success': False, 'error': error_msg}), 500
-    return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+    mapped_data = {
+        'user_id': str(user.id),
+        'name': data['name'],
+        'email': data['email'],
+        'phone': data['phone'],
+        'package_name': data['package_name'],
+        'date': data['date'],
+        'amount': float(data['amount']),
+        'payment_id': data['payment_id'],
+        'payment_status': data['payment_status'],
+        'adults': int(data.get('adults', 1)),
+        'children': int(data.get('children', 0)),
+        'city': data.get('city', ''),
+        'state': data.get('state', ''),
+        'country': data.get('country', 'India'),
+        'special_requests': data.get('special_requests', ''),
+    }
+
+    print(f"[PACKAGE] Inserting: {json.dumps(mapped_data, default=str)}")
+
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not initialized'}), 500
+
+    try:
+        result = supabase.table('package_bookings').insert(mapped_data).execute()
+        print(f"[PACKAGE] Insert response: {result.data}")
+        booking_id = result.data[0]['id'] if result.data else None
+        return jsonify({'success': True, 'message': 'Package booking submitted successfully', 'id': booking_id})
+    except Exception as e:
+        print(f"[PACKAGE] Insert FAILED: {type(e).__name__}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============================================================
+#  PLACES & CHAT
+# ============================================================
+
+FALLBACK_PLACES = [
+    {"name": "Dassam Falls", "tag": "Waterfall", "image_url": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/19/fa/bd/6e/a-full-view-of-the-falls.jpg?w=900&h=500&s=1", "description": "A spectacular cascade on the Kanchi River surrounded by sal forests."},
+    {"name": "Hundru Falls", "tag": "Waterfall", "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Hundru_Falls.jpg/1200px-Hundru_Falls.jpg", "description": "Monsoon-favorite plunge pool and scenic rock formations."},
+    {"name": "Betla National Park", "tag": "Wildlife", "image_url": "https://superbcollections.com/wp-content/uploads/2023/08/Betla-National-Park.jpeg", "description": "Forests, elephants, and the ruins of Palamu Fort."},
+    {"name": "Netarhat", "tag": "Hill Station", "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Netarhat_Hill_Station.jpg/1200px-Netarhat_Hill_Station.jpg", "description": "'Queen of Chotanagpur'—famed for sunrise/sunset points."}
+]
+
+
+@app.route('/api/places')
+def get_places():
+    if not supabase:
+        return jsonify(FALLBACK_PLACES)
+    try:
+        response = supabase.table('places').select('*').execute()
+        return jsonify(response.data)
+    except Exception as e:
+        print(f"[PLACES] Error fetching places: {e}")
+        return jsonify(FALLBACK_PLACES)
+
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.json or {}
     question = data.get('question', '').lower()
-    
     if 'weather' in question:
         response = "The weather in Jharkhand is generally pleasant. Currently around 25°C."
     elif 'place' in question:
         response = "Popular places: Dassam Falls, Betla National Park, Hundru Falls, Netarhat."
     else:
         response = "Ask about Jharkhand weather, places, travel times, or activities!"
-    
     return jsonify({'response': response})
 
-@app.route('/api/places')
-def get_places():
-    if not supabase:
-        return jsonify(FALLBACK_PLACES)
-        
-    try:
-        response = supabase.table('places').select('*').execute()
-        return jsonify(response.data)
-    except Exception as e:
-        print(f"Error fetching places: {e}")
-        return jsonify(FALLBACK_PLACES)
 
 @app.route('/api/config/razorpay')
 def get_razorpay_config():
     return jsonify({'key_id': RAZORPAY_KEY_ID})
 
+
+# ============================================================
+#  USER PROFILE / BOOKINGS
+# ============================================================
 
 def no_cache_jsonify(*args, **kwargs):
     response = make_response(jsonify(*args, **kwargs))
@@ -323,22 +382,17 @@ def no_cache_jsonify(*args, **kwargs):
     return response
 
 
-@app.route('/profile')
-def profile_page():
-    return render_template('profile.html')
-
 @app.route('/api/user/bookings')
 @require_auth
 def get_user_bookings():
-    user = get_current_user()
+    user = g.user
     if not supabase:
-        return jsonify({})
+        return no_cache_jsonify({'guides': [], 'transports': [], 'activities': [], 'packages': []})
     try:
-        guides = supabase.table('guide_bookings').select('*').eq('user_id', user.id).order('created_at', desc=True).execute()
-        transports = supabase.table('transport_bookings').select('*').eq('user_id', user.id).order('created_at', desc=True).execute()
-        activities = supabase.table('activity_bookings').select('*').eq('user_id', user.id).order('created_at', desc=True).execute()
-        packages = supabase.table('package_bookings').select('*').eq('user_id', user.id).order('created_at', desc=True).execute()
-        
+        guides = supabase.table('guide_bookings').select('*').eq('user_id', str(user.id)).order('created_at', desc=True).execute()
+        transports = supabase.table('transport_bookings').select('*').eq('user_id', str(user.id)).order('created_at', desc=True).execute()
+        activities = supabase.table('activity_bookings').select('*').eq('user_id', str(user.id)).order('created_at', desc=True).execute()
+        packages = supabase.table('package_bookings').select('*').eq('user_id', str(user.id)).order('created_at', desc=True).execute()
         return no_cache_jsonify({
             'guides': guides.data or [],
             'transports': transports.data or [],
@@ -346,13 +400,13 @@ def get_user_bookings():
             'packages': packages.data or []
         })
     except Exception as e:
-        print(f"Error fetching user bookings: {e}")
+        print(f"[PROFILE] Error fetching user bookings: {e}")
         return no_cache_jsonify({'guides': [], 'transports': [], 'activities': [], 'packages': []})
 
-# Admin routes
-@app.route('/admin')
-def admin_dashboard():
-    return render_template('admin.html')
+
+# ============================================================
+#  ADMIN ROUTES
+# ============================================================
 
 @app.route('/api/admin/guide-bookings')
 def get_guide_bookings():
@@ -361,8 +415,9 @@ def get_guide_bookings():
             result = supabase.table('guide_bookings').select('*').order('created_at', desc=True).execute()
             return no_cache_jsonify(result.data or [])
         except Exception as e:
-            print(f"Error fetching guide bookings: {e}")
+            print(f"[ADMIN] Error fetching guide bookings: {e}")
     return no_cache_jsonify([])
+
 
 @app.route('/api/admin/transport-bookings')
 def get_transport_bookings():
@@ -371,8 +426,9 @@ def get_transport_bookings():
             result = supabase.table('transport_bookings').select('*').order('created_at', desc=True).execute()
             return no_cache_jsonify(result.data or [])
         except Exception as e:
-            print(f"Error fetching transport bookings: {e}")
+            print(f"[ADMIN] Error fetching transport bookings: {e}")
     return no_cache_jsonify([])
+
 
 @app.route('/api/admin/activity-bookings')
 def get_activity_bookings():
@@ -381,8 +437,9 @@ def get_activity_bookings():
             result = supabase.table('activity_bookings').select('*').order('created_at', desc=True).execute()
             return no_cache_jsonify(result.data or [])
         except Exception as e:
-            print(f"Error fetching activity bookings: {e}")
+            print(f"[ADMIN] Error fetching activity bookings: {e}")
     return no_cache_jsonify([])
+
 
 @app.route('/api/admin/package-bookings')
 def get_package_bookings():
@@ -391,26 +448,25 @@ def get_package_bookings():
             result = supabase.table('package_bookings').select('*').order('created_at', desc=True).execute()
             return no_cache_jsonify(result.data or [])
         except Exception as e:
-            print(f"Error fetching package bookings: {e}")
+            print(f"[ADMIN] Error fetching package bookings: {e}")
     return no_cache_jsonify([])
+
 
 @app.route('/api/admin/stats')
 def get_stats():
     if supabase:
         try:
-            # Get total counts
             guide_total = supabase.table('guide_bookings').select('id', count='exact').execute()
             transport_total = supabase.table('transport_bookings').select('id', count='exact').execute()
             activity_total = supabase.table('activity_bookings').select('id', count='exact').execute()
             package_total = supabase.table('package_bookings').select('id', count='exact').execute()
-            
-            # Get today's counts
+
             today = datetime.now().date().isoformat()
             guide_today = supabase.table('guide_bookings').select('id', count='exact').gte('created_at', today).execute()
             transport_today = supabase.table('transport_bookings').select('id', count='exact').gte('created_at', today).execute()
             activity_today = supabase.table('activity_bookings').select('id', count='exact').gte('created_at', today).execute()
             package_today = supabase.table('package_bookings').select('id', count='exact').gte('created_at', today).execute()
-            
+
             return no_cache_jsonify({
                 'total': {
                     'guide': guide_total.count or 0,
@@ -426,8 +482,10 @@ def get_stats():
                 }
             })
         except Exception as e:
-            print(f"Error fetching stats: {e}")
-    return no_cache_jsonify({'total': {'guide': 0, 'transport': 0, 'activity': 0}, 'today': {'guide': 0, 'transport': 0, 'activity': 0}})
+            print(f"[ADMIN] Error fetching stats: {e}")
+    return no_cache_jsonify({'total': {'guide': 0, 'transport': 0, 'activity': 0, 'package': 0},
+                             'today': {'guide': 0, 'transport': 0, 'activity': 0, 'package': 0}})
+
 
 if __name__ == '__main__':
     app.run(debug=True)

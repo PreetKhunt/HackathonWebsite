@@ -1,134 +1,132 @@
-// Supabase Authentication Helper for Frontend
+// ============================================================
+//  auth.js - Supabase Authentication Helper
+//  Loaded by ALL pages (index.html, booking.html, templates/*)
+// ============================================================
+
 const SUPABASE_URL = "https://jbiovrijnxrjmpkawlgx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpiaW92cmlqbnhyam1wa2F3bGd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2OTYzNTksImV4cCI6MjA5OTI3MjM1OX0.yONZqb3vxkv1i-riYgn_qSdt0Zgt4DHVPlBV8vf1AUU";
 
+// Backend API base URL - used by all booking fetch() calls
+window.API_BASE = 'https://hackathonwebsite-7n3a.onrender.com/api';
+
+// Initialize Supabase client - available globally as window.supabaseClient
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 window.supabaseClient = supabaseClient;
 
-
-// Intercept fetch requests to add Authorization header automatically
-const originalFetch = window.fetch;
-window.fetch = async function() {
-    let [resource, config] = arguments;
-    
-    // Check if the request is destined for our backend API
-    const isApiRequest = typeof resource === 'string' && (
-        resource.startsWith('/api/') || 
-        (window.API_BASE && resource.startsWith(window.API_BASE))
-    );
-    
-    if (isApiRequest) {
-        const session = (await window.supabaseClient.auth.getSession()).data.session;
-        if (session) {
-            config = config || {};
-            config.headers = config.headers || {};
-            config.headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
+// ============================================================
+//  Helper: Get session and attach auth header for a fetch call
+//  Returns { session, headers } - call this inside every booking function.
+//  DO NOT rely on a global fetch interceptor - be explicit.
+// ============================================================
+window.getAuthHeaders = async function() {
+    const { data: { session }, error } = await window.supabaseClient.auth.getSession();
+    if (error) {
+        console.error("[AUTH] getSession error:", error);
     }
-    return originalFetch(resource, config);
+    console.log("[AUTH] getAuthHeaders - session exists:", !!session,
+                session ? "| token length: " + session.access_token.length : "");
+    const headers = { 'Content-Type': 'application/json' };
+    if (session && session.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    return { session, headers };
 };
 
-// Check auth and redirect if not logged in (used on protected pages)
-async function requireAuth() {
-    const session = (await window.supabaseClient.auth.getSession()).data.session;
+// ============================================================
+//  Helper: Require login - redirect if not authenticated.
+//  Returns session or redirects to /login.
+// ============================================================
+window.requireLogin = async function() {
+    const { session, headers } = await window.getAuthHeaders();
     if (!session) {
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
+        window.location.href = '/login';
         return null;
     }
-    return session.user;
-}
+    return session;
+};
 
-// Update Navbar UI based on auth state
+// ============================================================
+//  Navbar: inject auth state UI into .menu nav
+// ============================================================
 async function updateNavbar() {
-    const session = (await window.supabaseClient.auth.getSession()).data.session;
-    console.log("Supabase Auth Session (updateNavbar):", session);
-    const navLinks = document.querySelector('.menu');
-    if (!navLinks) return;
-    
-    // Remove existing auth links to replace them
-    const existingAuth = document.querySelectorAll('.auth-nav-item');
-    existingAuth.forEach(el => el.remove());
-    
+    const navMenu = document.querySelector('.menu') || document.querySelector('nav');
+    if (!navMenu) return;
+
+    // Remove any previously injected auth items
+    navMenu.querySelectorAll('.auth-nav-item').forEach(el => el.remove());
+
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    console.log("[AUTH] updateNavbar - session:", !!session);
+
     if (session) {
         const user = session.user;
         const name = user.user_metadata?.name || user.email.split('@')[0];
-        
-        const profileDropdown = document.createElement('div');
-        profileDropdown.className = 'auth-nav-item dropdown';
-        profileDropdown.style.position = 'relative';
-        profileDropdown.style.display = 'inline-block';
-        profileDropdown.style.cursor = 'pointer';
-        profileDropdown.innerHTML = `
-            <div style="display:flex;align-items:center;gap:8px;padding:8px;">
-                <div style="width:32px;height:32px;border-radius:50%;background:#667eea;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;">
-                    ${name.charAt(0).toUpperCase()}
-                </div>
-                <span>${name}</span>
+        const initial = name.charAt(0).toUpperCase();
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'auth-nav-item';
+        wrapper.style.cssText = 'position:relative;display:inline-flex;align-items:center;';
+        wrapper.innerHTML = `
+            <div id="navAvatarBtn" style="display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;border-radius:10px;" title="${user.email}">
+                <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#73d13d,#3bd1c4);color:#0b0e13;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">${initial}</div>
+                <span style="font-size:.9rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
             </div>
-            <div class="dropdown-content" style="display:none;position:absolute;right:0;background:white;box-shadow:0 8px 16px rgba(0,0,0,0.1);min-width:160px;z-index:100;border-radius:4px;">
-                <div style="padding:12px;border-bottom:1px solid #eee;color:#666;font-size:0.9em;">${user.email}</div>
-                <a href="/profile" style="display:block;padding:12px;color:#333;text-decoration:none;">My Profile</a>
-                <a href="#" id="logoutBtn" style="display:block;padding:12px;color:#d32f2f;text-decoration:none;">Logout</a>
+            <div id="navDropdown" style="display:none;position:absolute;top:100%;right:0;background:#1b2130;border:1px solid #2b3446;border-radius:10px;min-width:180px;z-index:200;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+                <div style="padding:12px;border-bottom:1px solid #2b3446;color:#9ba3b4;font-size:0.8rem;word-break:break-all;">${user.email}</div>
+                <a href="/profile" style="display:block;padding:12px 16px;color:#e7ecf3;text-decoration:none;font-size:.9rem;" onmouseover="this.style.background='#242a36'" onmouseout="this.style.background='transparent'">&#128100; My Profile</a>
+                <a href="#" id="navLogoutBtn" style="display:block;padding:12px 16px;color:#ff6b6b;text-decoration:none;font-size:.9rem;" onmouseover="this.style.background='#242a36'" onmouseout="this.style.background='transparent'">&#10148; Sign Out</a>
             </div>
         `;
-        
-        navLinks.appendChild(profileDropdown);
-        
-        profileDropdown.addEventListener('mouseenter', () => profileDropdown.querySelector('.dropdown-content').style.display = 'block');
-        profileDropdown.addEventListener('mouseleave', () => profileDropdown.querySelector('.dropdown-content').style.display = 'none');
-        
-        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+        navMenu.appendChild(wrapper);
+
+        const avatarBtn = document.getElementById('navAvatarBtn');
+        const dropdown = document.getElementById('navDropdown');
+
+        avatarBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+        document.addEventListener('click', () => { dropdown.style.display = 'none'; });
+
+        document.getElementById('navLogoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
             await supabaseClient.auth.signOut();
             window.location.href = '/';
         });
     } else {
-        const loginLink = document.createElement('a');
-        loginLink.className = 'auth-nav-item';
-        loginLink.href = '/login';
-        loginLink.textContent = 'Sign In';
-        loginLink.style.fontWeight = 'bold';
-        
-        const signupLink = document.createElement('a');
-        signupLink.className = 'auth-nav-item';
-        signupLink.href = '/signup';
-        signupLink.textContent = 'Sign Up';
-        signupLink.style.padding = '8px 16px';
-        signupLink.style.background = '#667eea';
-        signupLink.style.color = 'white';
-        signupLink.style.borderRadius = '4px';
-        
-        navLinks.appendChild(loginLink);
-        navLinks.appendChild(signupLink);
+        // Show Sign In + Sign Up
+        const signInLink = document.createElement('a');
+        signInLink.className = 'auth-nav-item';
+        signInLink.href = '/login';
+        signInLink.textContent = 'Sign In';
+        signInLink.style.cssText = 'font-weight:600;padding:.4rem .8rem;border-radius:10px;opacity:.9;';
+
+        const signUpLink = document.createElement('a');
+        signUpLink.className = 'auth-nav-item';
+        signUpLink.href = '/signup';
+        signUpLink.textContent = 'Sign Up';
+        signUpLink.style.cssText = 'padding:.4rem .9rem;border-radius:10px;background:linear-gradient(135deg,#73d13d,#3bd1c4);color:#0b0e13;font-weight:700;';
+
+        navMenu.appendChild(signInLink);
+        navMenu.appendChild(signUpLink);
     }
 }
 
-// Function to handle booking button clicks
-async function handleBookingClick(e, bookingFunction) {
-    e.preventDefault();
-    const session = (await window.supabaseClient.auth.getSession()).data.session;
-    if (!session) {
-        // Save current scroll or context if needed, then redirect
-        sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
-    } else {
-        bookingFunction();
-    }
-}
-
-// Listen for auth state changes to update UI instantly
+// ============================================================
+//  Listen for auth state changes (login, logout, token refresh)
+// ============================================================
 supabaseClient.auth.onAuthStateChange((event, session) => {
-    console.log("onAuthStateChange event:", event, "session:", session);
+    console.log("[AUTH] onAuthStateChange:", event, "| session:", !!session);
     updateNavbar();
 });
 
-// Immediately parse session on load for OAuth callbacks
-window.addEventListener('load', async () => {
+// ============================================================
+//  On page load: update navbar + handle OAuth redirect tokens
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+    // Supabase auto-handles the hash fragment from OAuth redirect
     const { data, error } = await supabaseClient.auth.getSession();
-    console.log("Session check on page load:", data.session, "Error:", error);
-    if (error) {
-        console.error("OAuth callback/session error:", error);
-    }
+    console.log("[AUTH] DOMContentLoaded - session:", !!data.session, error ? "| error: " + error.message : "");
+    updateNavbar();
 });
-window.API_BASE = 'https://hackathonwebsite-7n3a.onrender.com/api';

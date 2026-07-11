@@ -791,14 +791,18 @@
       </article>
     `).join('');
 
-    // -------- Guide & Transport ----------
+    // -------- Guide Booking ----------
     async function bookGuide(){
-      const session = (await window.supabaseClient.auth.getSession()).data.session;
+      // Check auth first - redirect to /login if not logged in
+      const { session, headers } = await window.getAuthHeaders();
       if (!session) {
+        console.log('[bookGuide] No session - redirecting to /login');
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
+        window.location.href = '/login';
         return;
       }
+      console.log('[bookGuide] Session OK, user:', session.user.email);
+
       const gName = document.getElementById("gName");
       const gPhone = document.getElementById("gPhone");
       const gEmail = document.getElementById("gEmail");
@@ -820,52 +824,47 @@
           if(gMsg) { gMsg.textContent = "Please fill name, phone and date."; gMsg.style.color = "#ffaaaa"; }
           return; 
       }
+      if(gMsg) { gMsg.textContent = "Submitting..."; gMsg.style.color = "#9ba3b4"; }
       try {
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
-        const headers = { 'Content-Type': 'application/json' };
-        if (session) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
+        console.log('[bookGuide] Sending POST to', window.API_BASE + '/book-guide');
+        console.log('[bookGuide] Authorization header present:', !!headers.Authorization);
         const r = await fetch(`${window.API_BASE}/book-guide`, {
           method: 'POST',
           headers: headers,
           body: JSON.stringify(data)
         });
         const responseText = await r.text();
+        console.log('[bookGuide] Response status:', r.status, 'body:', responseText.substring(0, 200));
         let res;
         try {
             res = JSON.parse(responseText);
         } catch (parseError) {
-            throw new Error("Backend returned non-JSON response: " + responseText.substring(0, 100));
+            throw new Error("Backend returned non-JSON: " + responseText.substring(0, 100));
         }
         if (gMsg) {
           if (r.ok && res.success) {
-            gMsg.textContent = res.message;
+            gMsg.textContent = res.message || 'Guide booking submitted successfully!';
             gMsg.style.color = "#9fe29f";
-            
-            // simple itinerary kick
             if(data.place && data.place.length > 0 && plan) {
               plan.innerHTML = `<h4>AI Suggestion</h4>
-                <p>Suggested day plan for ${data.place.slice(0,3).join(", ")}:\n• Morning: Meet guide, quick briefing.\n• Mid-day: Site visits & lunch at local eatery.\n• Evening: Sunset view & return.\n• Tips: Carry water, avoid litter, respect local customs.</p>`;
+                <p>Suggested day plan for ${data.place.slice(0,3).join(", ")}: Morning: Meet guide, quick briefing. Mid-day: Site visits & lunch. Evening: Sunset view & return.</p>`;
             }
           } else {
-            gMsg.textContent = res.error || res.message || "Failed to submit request.";
+            gMsg.textContent = res.error || res.message || `Error ${r.status}: Failed to submit.`;
             gMsg.style.color = "#ffaaaa";
           }
         }
       } catch (e) {
-        console.error("bookGuide error:", e);
-        if (gMsg) {
-          gMsg.textContent = "Error: " + (e.message || "Network error occurred.");
-          gMsg.style.color = "#ffaaaa";
-        }
+        console.error("[bookGuide] Error:", e);
+        if (gMsg) { gMsg.textContent = "Error: " + (e.message || "Network error."); gMsg.style.color = "#ffaaaa"; }
       }
     }
     async function bookTransport(){
-      const session = (await window.supabaseClient.auth.getSession()).data.session;
+      const { session, headers } = await window.getAuthHeaders();
       if (!session) {
+        console.log('[bookTransport] No session - redirecting to /login');
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
+        window.location.href = '/login';
         return;
       }
       const tName = document.getElementById("tName");
@@ -886,42 +885,39 @@
           if(tMsg) { tMsg.textContent="Please complete all fields."; tMsg.style.color="#ffaaaa"; }
           return; 
       }
+      if(tMsg) { tMsg.textContent = "Submitting..."; tMsg.style.color = "#9ba3b4"; }
       try {
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
-        const headers = { 'Content-Type': 'application/json' };
-        if (session) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
+        console.log('[bookTransport] Sending POST, auth header present:', !!headers.Authorization);
         const r = await fetch(`${window.API_BASE}/book-transport`, {
           method: 'POST',
           headers: headers,
           body: JSON.stringify(data)
         });
-        const res = await r.json();
+        const responseText = await r.text();
+        console.log('[bookTransport] Response:', r.status, responseText.substring(0,200));
+        const res = JSON.parse(responseText);
         if (tMsg) {
           if (r.ok && res.success) {
-            tMsg.textContent = res.message;
+            tMsg.textContent = res.message || 'Transport booking submitted!';
             tMsg.style.color = "#9fe29f";
           } else {
-            tMsg.textContent = res.error || "Failed to submit request.";
+            tMsg.textContent = res.error || `Error ${r.status}: Failed.`;
             tMsg.style.color = "#ffaaaa";
           }
         }
       } catch (e) {
-        console.error(e);
-        if (tMsg) {
-          tMsg.textContent = "Network error occurred.";
-          tMsg.style.color = "#ffaaaa";
-        }
+        console.error('[bookTransport] Error:', e);
+        if (tMsg) { tMsg.textContent = "Error: " + (e.message || "Network error."); tMsg.style.color = "#ffaaaa"; }
       }
     }
     
     // -------- Activity Booking Function ----------
     async function bookActivity() {
-      const session = (await window.supabaseClient.auth.getSession()).data.session;
+      const { session, headers } = await window.getAuthHeaders();
       if (!session) {
+        console.log('[bookActivity] No session - redirecting to /login');
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
+        window.location.href = '/login';
         return;
       }
       const data = {
@@ -934,32 +930,26 @@
         date: document.getElementById('aDate').value,
         requirements: document.getElementById('aRequirements').value.trim()
       };
-      
+      const msgEl = document.getElementById('aMsg');
       if (!data.name || !data.phone || !data.date || !data.activity) { 
-        document.getElementById('aMsg').textContent = "Please fill name, phone, activity and date.";
-        document.getElementById('aMsg').style.color = "#ffaaaa"; 
+        if(msgEl) { msgEl.textContent = "Please fill name, phone, activity and date."; msgEl.style.color = "#ffaaaa"; }
         return;
       }
+      if(msgEl) { msgEl.textContent = "Submitting..."; msgEl.style.color = "#9ba3b4"; }
       try {
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
-        const headers = { 'Content-Type': 'application/json' };
-        if (session) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
+        console.log('[bookActivity] Sending POST, auth header present:', !!headers.Authorization);
         const r = await fetch(`${window.API_BASE}/book-activity`, {
           method: 'POST',
           headers: headers,
           body: JSON.stringify(data)
         });
-        const res = await r.json();
-        
-        const msgEl = document.getElementById('aMsg');
+        const responseText = await r.text();
+        console.log('[bookActivity] Response:', r.status, responseText.substring(0,200));
+        const res = JSON.parse(responseText);
         if (msgEl) {
           if (r.ok && res.success) {
-            msgEl.textContent = res.message;
+            msgEl.textContent = res.message || 'Activity booking submitted!';
             msgEl.style.color = "#9fe29f";
-            
-            // Clear form
             document.getElementById('aName').value = '';
             document.getElementById('aPhone').value = '';
             document.getElementById('aEmail').value = '';
@@ -967,26 +957,22 @@
             document.getElementById('aDate').value = '';
             document.getElementById('aRequirements').value = '';
           } else {
-            msgEl.textContent = res.error || "Failed to submit request.";
+            msgEl.textContent = res.error || `Error ${r.status}: Failed.`;
             msgEl.style.color = "#ffaaaa";
           }
         }
       } catch (e) {
-        console.error(e);
-        const msgEl = document.getElementById('aMsg');
-        if (msgEl) {
-          msgEl.textContent = "Network error occurred.";
-          msgEl.style.color = "#ffaaaa";
-        }
+        console.error('[bookActivity] Error:', e);
+        if (msgEl) { msgEl.textContent = "Error: " + (e.message || "Network error."); msgEl.style.color = "#ffaaaa"; }
       }
     }
 
     // --------- Quick itinerary generator ----------
     async function makePlan(){
-      const session = (await window.supabaseClient.auth.getSession()).data.session;
+      const { session } = await window.getAuthHeaders();
       if (!session) {
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
+        window.location.href = '/login';
         return;
       }
       const days = document.getElementById("days");
@@ -1054,7 +1040,7 @@
       const session = (await window.supabaseClient.auth.getSession()).data.session;
       if (!session) {
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
-        window.location.href = 'templates/login.html';
+        window.location.href = '/login';
         return;
       }
       const box = document.getElementById('chatInput');

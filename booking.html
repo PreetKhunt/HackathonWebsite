@@ -192,14 +192,16 @@
     document.getElementById('btn-price').textContent = amount;
 
     async function handleFormSubmit(e) {
-        e.preventDefault(); // Prevent standard form submission
-        
-        const session = (await window.supabaseClient.auth.getSession()).data.session;
+        e.preventDefault();
+
+        const { session, headers } = await window.getAuthHeaders();
         if (!session) {
+            console.log('[booking] No session - redirecting to /login');
             sessionStorage.setItem('redirectAfterLogin', window.location.href);
-            window.location.href = 'templates/login.html';
+            window.location.href = '/login';
             return;
         }
+        console.log('[booking] Session OK, user:', session.user.email);
         
         const formDetails = {
             name: document.getElementById('bName').value,
@@ -236,28 +238,26 @@
                 btn.textContent = "Saving Booking...";
                 btn.disabled = true;
 
-                // Save to backend API
-                window.supabaseClient.auth.getSession().then(({ data: { session } }) => {
-                    const headers = { 'Content-Type': 'application/json' };
-                    if (session) {
-                        headers['Authorization'] = `Bearer ${session.access_token}`;
-                    }
-                    fetch(`${window.API_BASE}/book-package`, {
+                // Save to backend API - use getAuthHeaders() to get fresh token
+                window.getAuthHeaders().then(({ headers }) => {
+                    console.log('[bookPackage] Sending POST, auth header present:', !!headers.Authorization);
+                    return fetch(`${window.API_BASE}/book-package`, {
                         method: 'POST',
                         headers: headers,
                         body: JSON.stringify(formDetails)
-                    })
+                    });
+                })
                 .then(res => res.json())
                 .then(data => {
+                    console.log('[bookPackage] Response:', data);
                     if (data.success) {
-                        // Redirect to success page, pass needed data via URL encoding or local storage
                         const qs = new URLSearchParams({
                             ref: data.id || 'REF' + Math.floor(Math.random()*10000),
                             pid: response.razorpay_payment_id,
                             pkg: packageName,
                             amt: amount
                         }).toString();
-                        window.location.href = 'success.html?' + qs;
+                        window.location.href = '/success?' + qs;
                     } else {
                         alert("Payment succeeded but saving failed: " + (data.error || "Unknown error") + "\nPlease contact support with Payment ID: " + response.razorpay_payment_id);
                         btn.textContent = "Pay Now ₹" + amount;
@@ -265,11 +265,10 @@
                     }
                 })
                 .catch(err => {
-                    console.error('Error saving booking:', err);
+                    console.error('[bookPackage] Error saving booking:', err);
                     alert("Payment succeeded but saving failed. Please contact support with Payment ID: " + response.razorpay_payment_id);
                     btn.textContent = "Pay Now ₹" + amount;
                     btn.disabled = false;
-                });
                 });
             },
             "prefill": {
