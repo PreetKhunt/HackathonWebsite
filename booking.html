@@ -197,7 +197,7 @@
         const session = await getSession();
         if (!session) {
             sessionStorage.setItem('redirectAfterLogin', window.location.href);
-            window.location.href = 'templates/login.html';
+            window.location.href = '/login';
             return;
         }
         
