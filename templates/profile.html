@@ -182,31 +182,17 @@
     
     async function fetchBookings() {
       try {
-        const session = await getSession();
-        if (!session) return;
-        const userId = session.user.id;
-        
-        const [guidesRes, transportsRes, activitiesRes, packagesRes] = await Promise.all([
-          window.supabaseClient.from('guide_bookings').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-          window.supabaseClient.from('transport_bookings').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-          window.supabaseClient.from('activity_bookings').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-          window.supabaseClient.from('package_bookings').select('*').eq('user_id', userId).order('created_at', { ascending: false })
-        ]);
-        
-        const data = {
-            guides: guidesRes.data || [],
-            transports: transportsRes.data || [],
-            activities: activitiesRes.data || [],
-            packages: packagesRes.data || []
-        };
+        const res = await fetch(`${window.API_BASE}/user/bookings`);
+        if (!res.ok) throw new Error("Failed to fetch bookings");
+        const data = await res.json();
         
         renderTable('packagesTableBody', data.packages, p => `
           <tr>
             <td>${p.package_name || 'N/A'}</td>
             <td>${p.date}</td>
             <td>${p.adults || 1} Ad, ${p.children || 0} Ch</td>
-            <td>₹${p.amount || 0}</td>
-            <td><span class="badge" style="background:#2b3446">${p.status || 'pending'}</span></td>
+            <td>?${p.amount || 0}</td>
+            <td><span class="badge" style="background:#2b3446">${p.status}</span></td>
           </tr>
         `);
         
@@ -214,16 +200,16 @@
           <tr>
             <td>${g.places}</td>
             <td>${g.date}</td>
-            <td><span class="badge" style="background:#2b3446">${g.status || 'pending'}</span></td>
+            <td><span class="badge" style="background:#2b3446">${g.status}</span></td>
           </tr>
         `);
         
         renderTable('transportsTableBody', data.transports, t => `
           <tr>
-            <td>${t.pickup_location} → ${t.destination}</td>
+            <td>${t.pickup_location} ? ${t.destination}</td>
             <td>${t.date} ${t.time}</td>
             <td>${t.vehicle_type}</td>
-            <td><span class="badge" style="background:#2b3446">${t.status || 'pending'}</span></td>
+            <td><span class="badge" style="background:#2b3446">${t.status}</span></td>
           </tr>
         `);
         
@@ -232,7 +218,7 @@
             <td>${a.activity}</td>
             <td>${a.location}</td>
             <td>${a.date}</td>
-            <td><span class="badge" style="background:#2b3446">${a.status || 'pending'}</span></td>
+            <td><span class="badge" style="background:#2b3446">${a.status}</span></td>
           </tr>
         `);
       } catch (e) {

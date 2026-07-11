@@ -197,7 +197,7 @@
         const session = await getSession();
         if (!session) {
             sessionStorage.setItem('redirectAfterLogin', window.location.href);
-            window.location.href = '/login';
+            window.location.href = 'templates/login.html';
             return;
         }
         
@@ -217,8 +217,10 @@
         };
 
         // Open Razorpay
+        const configRes = await fetch(`${window.API_BASE}/config/razorpay`);
+        const configData = await configRes.json();
         var options = {
-            "key": "rzp_test_T93BIkzoKFfaUG",
+            "key": configData.key_id,
             "amount": amount * 100, // paise
             "currency": "INR",
             "name": "Jharkhand Tourism",
@@ -235,22 +237,31 @@
                 btn.disabled = true;
 
                 // Save to backend API
-                formDetails.user_id = session.user.id;
-                window.supabaseClient.from('package_bookings').insert(formDetails)
-                .then(({ data, error }) => {
-                    if (error) throw error;
-                    // Redirect to success page, pass needed data via URL encoding or local storage
-                    const qs = new URLSearchParams({
-                        ref: 'REF' + Math.floor(Math.random()*10000),
-                        pid: response.razorpay_payment_id,
-                        pkg: packageName,
-                        amt: amount
-                    }).toString();
-                    window.location.href = 'success.html?' + qs;
+                fetch(`${window.API_BASE}/book-package`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formDetails)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        // Redirect to success page, pass needed data via URL encoding or local storage
+                        const qs = new URLSearchParams({
+                            ref: data.id || 'REF' + Math.floor(Math.random()*10000),
+                            pid: response.razorpay_payment_id,
+                            pkg: packageName,
+                            amt: amount
+                        }).toString();
+                        window.location.href = 'success.html?' + qs;
+                    } else {
+                        alert("Payment succeeded but saving failed: " + (data.error || "Unknown error") + "\nPlease contact support with Payment ID: " + response.razorpay_payment_id);
+                        btn.textContent = "Pay Now ₹" + amount;
+                        btn.disabled = false;
+                    }
                 })
                 .catch(err => {
                     console.error('Error saving booking:', err);
-                    alert("Payment succeeded but saving failed. Please contact support with Payment ID: " + response.razorpay_payment_id + "\nError: " + err.message);
+                    alert("Payment succeeded but saving failed. Please contact support with Payment ID: " + response.razorpay_payment_id);
                     btn.textContent = "Pay Now ₹" + amount;
                     btn.disabled = false;
                 });

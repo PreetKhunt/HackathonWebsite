@@ -720,13 +720,16 @@
   </footer>
 
   <script>
-    // API Base URL removed
+    // API Base URL
+    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://127.0.0.1:5000/api'
+      : 'https://jharkhand-tourism-backend-denu.onrender.com/api';
 
     // -------- Featured Places ----------
     async function loadPlaces() {
       try {
-        const { data: places, error } = await window.supabaseClient.from('places').select('*');
-        if (error || !places || places.length === 0) throw error || new Error('No places found');
+        const response = await fetch(`${API_BASE}/places`);
+        const places = await response.json();
         
         const grid = document.getElementById('placeGrid');
         grid.innerHTML = places.map(p => `
@@ -745,7 +748,7 @@
           {
             name:"Dassam Falls (Ranchi)",
             tag:"Waterfall",
-            image_url:"https://dynamic-media-cdn.tripadvisor.com/media/photo-o/19/fa/bd/6e/a-full-view-of-the-falls.jpg?w=900&h=500&s=1",
+            image_url:"https://images.unsplash.com/photo-1620857312151-54a7c180902c?w=900&h=500&fit=crop",
             description:"A spectacular cascade on the Kanchi River surrounded by sal forests."
           },
           {
@@ -769,7 +772,7 @@
           {
             name:"Patratu Valley",
             tag:"Scenic Drive",
-            image_url:"https://media-cdn.tripadvisor.com/media/photo-s/0e/5e/c0/46/drone-shot-of-the-valley.jpg",
+            image_url:"https://images.unsplash.com/photo-1600810724647-73d82a45a3be?w=900&h=500&fit=crop",
             description:"Winding roads, emerald hills, and the shimmering Patratu Lake."
           },
           {
@@ -781,19 +784,19 @@
           {
             name:"Parasnath Hill (Shikharji)",
             tag:"Trek",
-            image_url:"https://dynamic-media-cdn.tripadvisor.com/media/photo-o/09/6c/f6/c8/parasnath-hills.jpg?w=1200&h=-1&s=1",
+            image_url:"https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=1200&h=500&fit=crop",
             description:"Important Jain pilgrimage; rewarding hikes and misty viewpoints."
           },
           {
             name:"Ranchi Lake & Rock Garden",
             tag:"City",
-            image_url:"https://dynamic-media-cdn.tripadvisor.com/media/photo-o/18/3d/c0/dd/rock-garden.jpg?w=900&h=500&s=1",
+            image_url:"https://images.unsplash.com/photo-1592663527359-cf664edbcba0?w=900&h=500&fit=crop",
             description:"Relaxing lakeside vibes and sculpted gardens within the city."
           },
           {
             name:"Tribal Handicrafts",
             tag:"Marketplace",
-            image_url:"https://zineart.in/images/DOK/DOK006011.webp",
+            image_url:"https://images.unsplash.com/photo-1584988296336-fbd2eb11171a?w=900&h=500&fit=crop",
             description:"Local artisans, dokra metal craft, bamboo works—shop responsibly."
           }
         ];
@@ -829,31 +832,16 @@
         return; 
       }
       
-        const session = await getSession();
-        if (!session) {
-          sessionStorage.setItem('redirectAfterLogin', window.location.href);
-          window.location.href = 'templates/login.html';
-          return;
-        }
-
-        const mapped_data = {
-            name: data.name,
-            email: session.user.email || data.email,
-            phone: data.phone,
-            places: data.places.join(', '),
-            date: data.date,
-            duration: 1,
-            group_size: 1,
-            special_requirements: `Language: ${data.language}`,
-            user_id: session.user.id
-        };
-
-        const { error } = await window.supabaseClient.from('guide_bookings').insert(mapped_data);
+      try {
+        const response = await fetch(`${API_BASE}/book-guide`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data)
+        });
         
-        if (error) throw error;
-
-        document.getElementById('gMsg').textContent = "Guide booking submitted successfully!";
-        document.getElementById('gMsg').style.color = "#9fe29f";
+        const result = await response.json();
+        document.getElementById('gMsg').textContent = result.message;
+        document.getElementById('gMsg').style.color = result.success ? "#9fe29f" : "#ffaaaa";
       } catch (error) {
         document.getElementById('gMsg').textContent = "Network error. Please check connection.";
         document.getElementById('gMsg').style.color = "#ffaaaa";
@@ -875,40 +863,16 @@
         return; 
       }
       
-        const session = await getSession();
-        if (!session) {
-          sessionStorage.setItem('redirectAfterLogin', window.location.href);
-          window.location.href = 'templates/login.html';
-          return;
-        }
-
-        let d_date = data.when;
-        let d_time = '10:00:00';
-        if (d_date.includes('T')) {
-           const parts = d_date.split('T');
-           d_date = parts[0];
-           d_time = parts[1];
-        }
-
-        const mapped_data = {
-            name: data.name,
-            email: session.user.email,
-            phone: '0000000000',
-            pickup_location: data.from,
-            destination: data.to,
-            date: d_date,
-            time: d_time,
-            passengers: 1,
-            vehicle_type: data.vehicle,
-            user_id: session.user.id
-        };
-
-        const { error } = await window.supabaseClient.from('transport_bookings').insert(mapped_data);
+      try {
+        const response = await fetch(`${API_BASE}/book-transport`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data)
+        });
         
-        if (error) throw error;
-
-        document.getElementById('tMsg').textContent = "Transport booking submitted successfully!";
-        document.getElementById('tMsg').style.color = "#9fe29f";
+        const result = await response.json();
+        document.getElementById('tMsg').textContent = result.message;
+        document.getElementById('tMsg').style.color = result.success ? "#9fe29f" : "#ffaaaa";
       } catch (error) {
         document.getElementById('tMsg').textContent = "Network error. Please check connection.";
         document.getElementById('tMsg').style.color = "#ffaaaa";
@@ -934,34 +898,19 @@
         return; 
       }
       
-        const session = await getSession();
-        if (!session) {
-          sessionStorage.setItem('redirectAfterLogin', window.location.href);
-          window.location.href = 'templates/login.html';
-          return;
-        }
-
-        const mapped_data = {
-            name: data.name,
-            phone: data.phone,
-            email: data.email || session.user.email,
-            activity: data.activity,
-            location: data.location,
-            participants: parseInt(data.participants) || 1,
-            date: data.date,
-            experience_level: data.requirements,
-            user_id: session.user.id
-        };
-
-        const { error } = await window.supabaseClient.from('activity_bookings').insert(mapped_data);
+      try {
+        const response = await fetch(`${API_BASE}/book-activity`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data)
+        });
         
-        if (error) throw error;
-
-        document.getElementById('aMsg').textContent = "Activity booking submitted successfully!";
-        document.getElementById('aMsg').style.color = "#9fe29f";
+        const result = await response.json();
+        document.getElementById('aMsg').textContent = result.message;
+        document.getElementById('aMsg').style.color = result.success ? "#9fe29f" : "#ffaaaa";
         
         // Clear form on success
-        if (true) {
+        if (result.success) {
           document.getElementById('aName').value = '';
           document.getElementById('aPhone').value = '';
           document.getElementById('aEmail').value = '';
