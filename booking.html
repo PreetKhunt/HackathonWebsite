@@ -177,7 +177,16 @@
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script>
-    document.getElementById('yr').textContent = new Date().getFullYear();
+    function setBookingText(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (!element) {
+            console.error(`[booking] Missing display element: #${elementId}`);
+            return;
+        }
+        element.textContent = value;
+    }
+
+    setBookingText('yr', new Date().getFullYear());
 
     // Parse URL parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -186,15 +195,21 @@
     const duration = urlParams.get('duration') || '3D/2N';
 
     // Set summary
-    document.getElementById('summary-package').textContent = packageName;
-    document.getElementById('summary-price').textContent = displayAmount;
-    document.getElementById('summary-duration').textContent = duration;
-    document.getElementById('btn-price').textContent = displayAmount;
+    setBookingText('summary-package', packageName);
+    setBookingText('summary-price', displayAmount);
+    setBookingText('summary-duration', duration);
+    setBookingText('btn-price', displayAmount);
 
     async function handleFormSubmit(e) {
         e.preventDefault();
 
-        const button = document.querySelector('button[type="submit"]');
+        const form = e.currentTarget;
+        const button = form && form.querySelector('button[type="submit"]');
+        if (!button) {
+            console.error('[booking] Payment button was not found in the booking form.');
+            alert('The payment button did not load correctly. Refresh the page and try again.');
+            return;
+        }
         const originalButtonText = button.textContent;
         button.disabled = true;
         button.textContent = 'Preparing payment...';
@@ -235,8 +250,8 @@
             }
 
             const amount = order.amount / 100;
-            document.getElementById('summary-price').textContent = amount;
-            document.getElementById('btn-price').textContent = amount;
+            setBookingText('summary-price', amount);
+            setBookingText('btn-price', amount);
             button.textContent = 'Complete payment in Razorpay...';
 
             const checkout = new window.Razorpay({
