@@ -115,3 +115,5 @@ python -m unittest discover -s tests -v
 ```
 
 The payment tests mock Razorpay and Supabase; they do not make real charges or require live credentials.
+
+Made By Preet <!
