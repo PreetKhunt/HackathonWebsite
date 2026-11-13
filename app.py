@@ -4,6 +4,9 @@ from functools import wraps
 import os
 from datetime import datetime
 import json
+import uuid
+import razorpay
+import requests
 
 try:
     from supabase import create_client, Client
@@ -29,6 +32,23 @@ print(f"Backend SERVICE_KEY: {'SET (' + SUPABASE_SERVICE_KEY[:12] + '...)' if SU
 # Razorpay configuration
 RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
 RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
+PACKAGE_PRICES = {
+    'Budget': 6999,
+    'Deluxe': 14990,
+    'Premium': 26900,
+}
+RAZORPAY_API_ERRORS = (
+    razorpay.errors.BadRequestError,
+    razorpay.errors.GatewayError,
+    razorpay.errors.ServerError,
+    requests.exceptions.RequestException,
+)
+
+
+def get_razorpay_client():
+    if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
+        return None
+    return razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 # -------------------------------------------------------
 # supabase_auth  : anon key  - used to verify user JWTs
@@ -303,21 +323,74 @@ def book_package():
     user = g.user
     data = request.json or {}
 
-    required_fields = ['name', 'email', 'phone', 'package_name', 'date', 'amount', 'payment_id', 'payment_status']
+    required_fields = [
+        'name', 'email', 'phone', 'package_name', 'date',
+        'razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature',
+    ]
     for field in required_fields:
         if field not in data:
             return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
+
+    package_name = data['package_name']
+    expected_amount = PACKAGE_PRICES.get(package_name)
+    if expected_amount is None:
+        return jsonify({'success': False, 'message': 'Invalid package'}), 400
+
+    client = get_razorpay_client()
+    if not client:
+        return jsonify({'success': False, 'error': 'Razorpay is not configured'}), 503
+
+    try:
+        client.utility.verify_payment_signature({
+            'razorpay_order_id': data['razorpay_order_id'],
+            'razorpay_payment_id': data['razorpay_payment_id'],
+            'razorpay_signature': data['razorpay_signature'],
+        })
+    except razorpay.errors.SignatureVerificationError:
+        return jsonify({'success': False, 'message': 'Payment verification failed'}), 400
+
+    try:
+        order = client.order.fetch(data['razorpay_order_id'])
+        payment = client.payment.fetch(data['razorpay_payment_id'])
+    except RAZORPAY_API_ERRORS as e:
+        print(f"[PACKAGE] Razorpay verification lookup failed: {type(e).__name__}: {e}")
+        return jsonify({'success': False, 'error': 'Unable to verify payment with Razorpay'}), 502
+
+    order_notes = order.get('notes') or {}
+    if (
+        order.get('amount') != expected_amount * 100
+        or order.get('currency') != 'INR'
+        or str(order_notes.get('user_id')) != str(user.id)
+        or order_notes.get('package_name') != package_name
+        or payment.get('order_id') != data['razorpay_order_id']
+        or payment.get('amount') != expected_amount * 100
+        or payment.get('currency') != 'INR'
+    ):
+        return jsonify({'success': False, 'message': 'Payment does not match this booking'}), 400
+
+    if payment.get('status') == 'authorized':
+        try:
+            payment = client.payment.capture(
+                data['razorpay_payment_id'],
+                expected_amount * 100,
+            )
+        except RAZORPAY_API_ERRORS as e:
+            print(f"[PACKAGE] Razorpay payment capture failed: {type(e).__name__}: {e}")
+            return jsonify({'success': False, 'error': 'Unable to capture payment'}), 502
+
+    if payment.get('status') != 'captured':
+        return jsonify({'success': False, 'message': 'Payment has not been captured'}), 400
 
     mapped_data = {
         'user_id': str(user.id),
         'name': data['name'],
         'email': data['email'],
         'phone': data['phone'],
-        'package_name': data['package_name'],
+        'package_name': package_name,
         'date': data['date'],
-        'amount': float(data['amount']),
-        'payment_id': data['payment_id'],
-        'payment_status': data['payment_status'],
+        'amount': expected_amount,
+        'payment_id': data['razorpay_payment_id'],
+        'payment_status': 'paid',
         'adults': int(data.get('adults', 1)),
         'children': int(data.get('children', 0)),
         'city': data.get('city', ''),
@@ -339,6 +412,43 @@ def book_package():
     except Exception as e:
         print(f"[PACKAGE] Insert FAILED: {type(e).__name__}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/create-razorpay-order', methods=['POST'])
+@require_auth
+def create_razorpay_order():
+    data = request.json or {}
+    package_name = data.get('package_name')
+    amount = PACKAGE_PRICES.get(package_name)
+    if amount is None:
+        return jsonify({'success': False, 'message': 'Invalid package'}), 400
+
+    client = get_razorpay_client()
+    if not client:
+        return jsonify({'success': False, 'error': 'Razorpay is not configured'}), 503
+
+    try:
+        order = client.order.create(data={
+            'amount': amount * 100,
+            'currency': 'INR',
+            'receipt': uuid.uuid4().hex,
+            'notes': {
+                'user_id': str(g.user.id),
+                'package_name': package_name,
+            },
+        })
+    except RAZORPAY_API_ERRORS as e:
+        print(f"[PACKAGE] Razorpay order creation failed: {type(e).__name__}: {e}")
+        return jsonify({'success': False, 'error': 'Unable to create payment order'}), 502
+
+    return jsonify({
+        'success': True,
+        'key_id': RAZORPAY_KEY_ID,
+        'order_id': order['id'],
+        'amount': order['amount'],
+        'currency': order['currency'],
+        'package_name': package_name,
+    })
 
 
 # ============================================================

@@ -182,111 +182,129 @@
     // Parse URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const packageName = urlParams.get('package') || 'Budget';
-    const amount = urlParams.get('price') || '6999';
+    const displayAmount = urlParams.get('price') || '6999';
     const duration = urlParams.get('duration') || '3D/2N';
 
     // Set summary
     document.getElementById('summary-package').textContent = packageName;
-    document.getElementById('summary-price').textContent = amount;
+    document.getElementById('summary-price').textContent = displayAmount;
     document.getElementById('summary-duration').textContent = duration;
-    document.getElementById('btn-price').textContent = amount;
+    document.getElementById('btn-price').textContent = displayAmount;
 
     async function handleFormSubmit(e) {
         e.preventDefault();
 
-        const { session, headers } = await window.getAuthHeaders();
-        if (!session) {
-            console.log('[booking] No session - redirecting to /login');
-            sessionStorage.setItem('redirectAfterLogin', window.location.href);
-            window.location.href = '/login';
-            return;
-        }
-        console.log('[booking] Session OK, user:', session.user.email);
-        
-        const formDetails = {
-            name: document.getElementById('bName').value,
-            email: document.getElementById('bEmail').value,
-            phone: document.getElementById('bPhone').value,
-            date: document.getElementById('bDate').value,
-            adults: parseInt(document.getElementById('bAdults').value),
-            children: parseInt(document.getElementById('bChildren').value) || 0,
-            city: document.getElementById('bCity').value,
-            state: document.getElementById('bState').value,
-            country: document.getElementById('bCountry').value,
-            special_requests: document.getElementById('bRequests').value,
-            package_name: packageName,
-            amount: parseFloat(amount)
-        };
+        const button = document.querySelector('button[type="submit"]');
+        const originalButtonText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Preparing payment...';
 
-        // Open Razorpay
-        const configRes = await fetch(`${window.API_BASE}/config/razorpay`);
-        const configData = await configRes.json();
-        var options = {
-            "key": configData.key_id,
-            "amount": amount * 100, // paise
-            "currency": "INR",
-            "name": "Jharkhand Tourism",
-            "description": packageName + " Package Booking",
-            "image": "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=100",
-            "handler": function (response){
-                // Payment Success
-                formDetails.payment_id = response.razorpay_payment_id;
-                formDetails.payment_status = 'paid';
-                
-                // Show a brief loading state on button
-                const btn = document.querySelector('button[type="submit"]');
-                btn.textContent = "Saving Booking...";
-                btn.disabled = true;
+        try {
+            const { session, headers } = await window.getAuthHeaders();
+            if (!session) {
+                sessionStorage.setItem('redirectAfterLogin', window.location.href);
+                window.location.href = '/login';
+                return;
+            }
+            if (!window.Razorpay) {
+                throw new Error('Payment service could not be loaded. Please try again.');
+            }
 
-                // Save to backend API - use getAuthHeaders() to get fresh token
-                window.getAuthHeaders().then(({ headers }) => {
-                    console.log('[bookPackage] Sending POST, auth header present:', !!headers.Authorization);
-                    return fetch(`${window.API_BASE}/book-package`, {
-                        method: 'POST',
-                        headers: headers,
-                        body: JSON.stringify(formDetails)
-                    });
-                })
-                .then(res => res.json())
-                .then(data => {
-                    console.log('[bookPackage] Response:', data);
-                    if (data.success) {
-                        const qs = new URLSearchParams({
-                            ref: data.id || 'REF' + Math.floor(Math.random()*10000),
-                            pid: response.razorpay_payment_id,
+            const formDetails = {
+                name: document.getElementById('bName').value,
+                email: document.getElementById('bEmail').value,
+                phone: document.getElementById('bPhone').value,
+                date: document.getElementById('bDate').value,
+                adults: parseInt(document.getElementById('bAdults').value, 10),
+                children: parseInt(document.getElementById('bChildren').value, 10) || 0,
+                city: document.getElementById('bCity').value,
+                state: document.getElementById('bState').value,
+                country: document.getElementById('bCountry').value,
+                special_requests: document.getElementById('bRequests').value,
+                package_name: packageName
+            };
+
+            const orderResponse = await fetch(`${window.API_BASE}/create-razorpay-order`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ package_name: packageName })
+            });
+            const order = await orderResponse.json();
+            if (!orderResponse.ok || !order.success) {
+                throw new Error(order.error || order.message || 'Could not start payment.');
+            }
+
+            const amount = order.amount / 100;
+            document.getElementById('summary-price').textContent = amount;
+            document.getElementById('btn-price').textContent = amount;
+            button.textContent = 'Complete payment in Razorpay...';
+
+            const checkout = new window.Razorpay({
+                key: order.key_id,
+                amount: order.amount,
+                currency: order.currency,
+                order_id: order.order_id,
+                name: 'Jharkhand Tourism',
+                description: packageName + ' Package Booking',
+                prefill: {
+                    name: formDetails.name,
+                    email: formDetails.email,
+                    contact: formDetails.phone
+                },
+                theme: { color: '#73d13d' },
+                handler: async function (payment) {
+                    button.textContent = 'Verifying payment...';
+                    try {
+                        const { headers: paymentHeaders } = await window.getAuthHeaders();
+                        const response = await fetch(`${window.API_BASE}/book-package`, {
+                            method: 'POST',
+                            headers: paymentHeaders,
+                            body: JSON.stringify({
+                                ...formDetails,
+                                razorpay_order_id: payment.razorpay_order_id,
+                                razorpay_payment_id: payment.razorpay_payment_id,
+                                razorpay_signature: payment.razorpay_signature
+                            })
+                        });
+                        const result = await response.json();
+                        if (!response.ok || !result.success) {
+                            throw new Error(result.error || result.message || 'Booking could not be confirmed.');
+                        }
+
+                        const query = new URLSearchParams({
+                            ref: result.id || 'N/A',
+                            pid: payment.razorpay_payment_id,
                             pkg: packageName,
                             amt: amount
-                        }).toString();
-                        window.location.href = '/success?' + qs;
-                    } else {
-                        alert("Payment succeeded but saving failed: " + (data.error || "Unknown error") + "\nPlease contact support with Payment ID: " + response.razorpay_payment_id);
-                        btn.textContent = "Pay Now ₹" + amount;
-                        btn.disabled = false;
+                        });
+                        window.location.href = '/success?' + query.toString();
+                    } catch (error) {
+                        console.error('[bookPackage] Payment verification or booking failed:', error);
+                        alert('Payment was received, but booking confirmation failed. Please contact support with Payment ID: ' + payment.razorpay_payment_id);
+                        button.textContent = originalButtonText;
+                        button.disabled = false;
                     }
-                })
-                .catch(err => {
-                    console.error('[bookPackage] Error saving booking:', err);
-                    alert("Payment succeeded but saving failed. Please contact support with Payment ID: " + response.razorpay_payment_id);
-                    btn.textContent = "Pay Now ₹" + amount;
-                    btn.disabled = false;
-                });
-            },
-            "prefill": {
-                "name": formDetails.name,
-                "email": formDetails.email,
-                "contact": formDetails.phone
-            },
-            "theme": {
-                "color": "#73d13d"
-            }
-        };
+                },
+                modal: {
+                    ondismiss: function () {
+                        button.textContent = originalButtonText;
+                        button.disabled = false;
+                    }
+                }
+            });
 
-        var rzp1 = new window.Razorpay(options);
-        rzp1.on('payment.failed', function (response){
-            alert("Payment Failed! Reason: " + response.error.description);
-            // form data is kept as is
-        });
-        rzp1.open();
+            checkout.on('payment.failed', function (response) {
+                alert('Payment failed: ' + response.error.description);
+                button.textContent = originalButtonText;
+                button.disabled = false;
+            });
+            checkout.open();
+        } catch (error) {
+            console.error('[bookPackage] Could not start payment:', error);
+            alert(error.message || 'Could not start payment. Please try again.');
+            button.textContent = originalButtonText;
+            button.disabled = false;
+        }
     }
   </script>
 </body>

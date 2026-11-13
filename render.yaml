@@ -21,3 +21,5 @@ services:
       - key: RAZORPAY_KEY_SECRET
         fromDatabase:
           name: RAZORPAY_KEY_SECRET
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
